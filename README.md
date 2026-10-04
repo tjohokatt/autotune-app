@@ -1,13 +1,13 @@
 # Autotune
 
-A browser-based autotune app for singing at home. Sing into the mic and hear your voice pitch-corrected in near real time, in styles from subtle to full robot. Everything runs in the browser: no backend, no accounts, and no audio ever leaves the device.
+A browser-based autotune app for singing at home. Sing into the mic and hear your voice pitch-corrected in near real time, in styles from subtle to full robot. Record a take, play it back and download it as a WAV file. Everything runs in the browser: no backend, no accounts, and no audio ever leaves the device.
 
 **Live site:** coming in phase 4 (GitHub Pages: `https://tjohokatt.github.io/autotune-app/`).
 
 ## Status
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.
 - ✅ Phase 2: Autotune. TD-PSOLA pitch shifting, five styles, live monitoring and settings (key, scale, retune speed, mix, volume).
-- ⏳ Phase 3: Record, play back and download
+- ✅ Phase 3: Recording. Record the autotuned voice (up to 5 min), play it back and download it as WAV.
 - ⏳ Phase 4: Deploy to GitHub Pages
 
 ## Running locally
@@ -34,12 +34,15 @@ Turn on **🎧 Hör mig själv** only with wired headphones. Without them the sp
 
 ## How it works
 ```
-getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") → GainNode (monitor) → destination
+getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") ─┬→ GainNode (monitor) → destination
+                                     │                           └→ AudioWorkletNode("recorder") → WAV
                                      ├─ ↓2 → YIN pitch detection → nearest note in key/scale
                                      ├─ retune smoothing (retuneMs, humanize) → shift ratio
                                      ├─ TD-PSOLA pitch shift (+ optional formant shift)
                                      └─ crossfade to dry when no clear pitch (breaths, consonants)
 ```
+Recordings capture the autotuned signal before the monitor volume, so a take sounds the same whether live monitoring is on or off. They are encoded as 16-bit mono WAV (`src/audio/wav.js`), the same format in every browser. That's about 5–6 MB per minute.
+
 Styles are plain objects in `src/presets.js`; adding a style means adding an object.
 
 | Style | Retune | Scale | Transpose | Formants |

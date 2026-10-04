@@ -4,6 +4,7 @@ import { PRESETS, DEFAULT_PRESET_ID, getPreset } from './presets.js';
 import { createTuner } from './ui/tuner.js';
 import { createPresetPicker } from './ui/presets.js';
 import { createSettings } from './ui/settings.js';
+import { createRecorderUI } from './ui/recorder.js';
 
 const startBtn = document.querySelector('#start');
 const resumeBtn = document.querySelector('#resume');
@@ -27,6 +28,8 @@ const state = {
 let engine = null;
 let busy = false;
 let debugTimer = 0;
+
+const recorderUI = createRecorderUI(document.querySelector('#recorder'), () => engine);
 
 /** Discrete options sent to the worklet. */
 function dspOptions() {
@@ -116,6 +119,7 @@ async function start() {
       },
     });
     tuner.start();
+    recorderUI.setEnabled(true);
     startBtn.textContent = 'Stoppa';
     startBtn.classList.add('running');
     debugTimer = setInterval(renderDebug, 1000);
@@ -131,6 +135,9 @@ async function start() {
 
 async function stop() {
   busy = true;
+  // Keep a take that is still recording before the audio graph goes away.
+  await recorderUI.stop();
+  recorderUI.setEnabled(false);
   clearInterval(debugTimer);
   tuner.stop();
   resumeBtn.hidden = true;
@@ -149,5 +156,6 @@ startBtn.addEventListener('click', () => {
 
 resumeBtn.addEventListener('click', () => engine?.resume());
 
+recorderUI.setEnabled(false);
 renderMonitor();
 renderDebug();

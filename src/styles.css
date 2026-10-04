@@ -15,6 +15,11 @@
   box-sizing: border-box;
 }
 
+/* Components set their own `display`, which would otherwise override `hidden`. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -294,4 +299,105 @@ h1 {
   width: 100%;
   min-height: 48px;
   accent-color: var(--accent);
+}
+
+/* Recording */
+.recorder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.record-button {
+  min-height: 64px;
+  border-radius: 32px;
+  border: 3px solid var(--off);
+  background: transparent;
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.record-button.recording {
+  background: var(--off);
+  color: #1b1035;
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+.record-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.record-button:focus-visible {
+  outline: 4px solid var(--text);
+  outline-offset: 3px;
+}
+@keyframes rec-pulse {
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 107, 107, 0.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .record-button.recording {
+    animation: none;
+  }
+}
+.record-timer {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--off);
+}
+
+.take {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--panel);
+}
+.take-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.15rem;
+}
+.take-info {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.take audio {
+  width: 100%;
+}
+.take-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.take-button {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 28px;
+  background: var(--accent-2);
+  color: #1b1035;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.take-button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 3px solid var(--muted);
+}
+.take-button:focus-visible {
+  outline: 4px solid var(--text);
+  outline-offset: 3px;
 }

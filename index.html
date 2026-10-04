@@ -33,6 +33,23 @@
       <button id="start" class="big-button" type="button">Starta</button>
       <button id="resume" class="big-button secondary" type="button" hidden>Tryck för att fortsätta</button>
 
+      <section id="recorder" class="recorder" aria-label="Inspelning">
+        <button id="record" class="record-button" type="button" aria-pressed="false">⏺ Spela in</button>
+        <div id="record-timer" class="record-timer" role="timer" hidden>0:00 / 5:00</div>
+
+        <div id="take" class="take" hidden>
+          <div class="take-header">
+            <strong>🎵 Din inspelning</strong>
+            <span id="take-info" class="take-info"></span>
+          </div>
+          <audio id="take-audio" controls preload="auto"></audio>
+          <div class="take-actions">
+            <a id="take-download" class="take-button" href="#" download>⬇️ Ladda ner</a>
+            <button id="take-discard" class="take-button secondary" type="button">🗑️ Släng</button>
+          </div>
+        </div>
+      </section>
+
       <button id="monitor" class="toggle-button" type="button" aria-pressed="false">🎧 Hör mig själv: AV</button>
       <p id="headphones-tip" class="tip" hidden>
         🎧 <strong>Använd hörlurar med sladd!</strong> Annars tjuter det i högtalaren, och trådlösa lurar gör att ljudet kommer för sent.
