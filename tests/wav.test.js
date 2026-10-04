@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodeWav } from '../src/audio/wav.js';
+import { encodeWav, floatToInt16 } from '../src/audio/wav.js';
 import { createYin } from '../src/dsp/yin.js';
 import { sine, centsBetween } from './signals.js';
 
@@ -53,5 +53,27 @@ describe('encodeWav', () => {
     for (let i = 0; i < input.length; i++) err = Math.max(err, Math.abs(decoded[i] - input[i]));
     expect(err).toBeLessThan(1 / 16000);
     expect(Math.abs(centsBetween(createYin(48000, 2048)(decoded).freq, 440))).toBeLessThan(5);
+  });
+});
+
+describe('stereo WAV', () => {
+  it('writes a stereo header with block align 4', () => {
+    const view = new DataView(encodeWav([new Float32Array(200)], 44100, 2)); // 100 frames
+    expect(view.getUint16(22, true)).toBe(2);
+    expect(view.getUint32(28, true)).toBe(44100 * 4);
+    expect(view.getUint16(32, true)).toBe(4);
+    expect(view.getUint32(40, true)).toBe(400);
+  });
+
+  it('keeps interleaved L R order and accepts int16 chunks', () => {
+    const lr = Float32Array.of(0.5, -0.5, 1, -1);
+    const view = new DataView(encodeWav([floatToInt16(lr)], 48000, 2));
+    const s = Array.from({ length: 4 }, (_, i) => view.getInt16(44 + i * 2, true));
+    expect(s).toEqual([16383, -16384, 32767, -32768]);
+  });
+
+  it('gives identical bytes for float and int16 input', () => {
+    const x = Float32Array.of(0.1, -0.2, 0.3, 2, -2);
+    expect(new Uint8Array(encodeWav([x], 48000))).toEqual(new Uint8Array(encodeWav([floatToInt16(x)], 48000)));
   });
 });
