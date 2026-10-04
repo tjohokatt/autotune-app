@@ -8,6 +8,7 @@ A browser-based autotune app for singing at home. Sing into the mic and hear you
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.
 - ✅ Phase 2: Autotune. TD-PSOLA pitch shifting, five styles, live monitoring and settings (key, scale, retune speed, mix, volume).
 - ✅ Phase 3: Recording. Record the autotuned voice (up to 5 min), play it back and download it as WAV.
+- ✅ Popgrupp style: vocal doubles, third + fifth harmonies and reverb, in stereo.
 - ⏳ Phase 4: Deploy to GitHub Pages
 
 ## Running locally
@@ -39,9 +40,11 @@ getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") ─┬→ Ga
                                      ├─ ↓2 → YIN pitch detection → nearest note in key/scale
                                      ├─ retune smoothing (retuneMs, humanize) → shift ratio
                                      ├─ TD-PSOLA pitch shift (+ optional formant shift)
-                                     └─ crossfade to dry when no clear pitch (breaths, consonants)
+                                     ├─ crossfade to dry when no clear pitch (breaths, consonants)
+                                     ├─ extra voices: doubles + harmonies (own PSOLA each, panned)
+                                     └─ stereo reverb → soft limiter
 ```
-Recordings capture the autotuned signal before the monitor volume, so a take sounds the same whether live monitoring is on or off. They are encoded as 16-bit mono WAV (`src/audio/wav.js`), the same format in every browser. That's about 5–6 MB per minute.
+Recordings capture the autotuned signal before the monitor volume, so a take sounds the same whether live monitoring is on or off. They are encoded as 16-bit stereo WAV (`src/audio/wav.js`), the same format in every browser. That's about 10–11 MB per minute.
 
 Styles are plain objects in `src/presets.js`; adding a style means adding an object.
 
@@ -52,8 +55,13 @@ Styles are plain objects in `src/presets.js`; adding a style means adding an obj
 | 🤖 Robot | 0 ms | chromatic | 0 | – |
 | 🐿️ Jordekorre | 0 ms | chromatic | +12 | ×1.5 |
 | 👹 Monster | 20 ms | chromatic | −12 | ×0.75 |
+| 💜 Popgrupp | 30 ms, 10 % humanize | major | 0 | ×1.08 |
+
+Popgrupp also adds two vocal doubles (±9 cents, 17/26 ms late, panned left/right), harmonies a third and a fifth above in the scale, and reverb. Harmonies, doubles and reverb are preset fields (`harmonies`, `doubles`, `reverb`), so a choir style can reuse them without new DSP.
 
 Latency added by the autotune is ~27 ms (two periods of the lowest voice, 75 Hz). The total also depends on the device's audio output; the **Teknisk info** panel shows the measured numbers.
+
+CPU (measured in Node on a desktop, per second of audio): single-voice styles ~3–5 % of one core, Popgrupp ~7 %. Expect roughly 3–5× that on a phone.
 
 - The mic is opened with echo cancellation, noise suppression and auto gain **off**, since those filters ruin pitch detection.
 - DSP lives in pure functions in `src/dsp/` and is unit-tested with synthetic signals. `src/audio/autotune-worklet.js` only wires them together.

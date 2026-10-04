@@ -12,7 +12,7 @@
 // (src/dsp/*) into a single ES module, which audioWorklet.addModule() needs.
 import workletUrl from './autotune-worklet.js?worker&url';
 import recorderUrl from './recorder-worklet.js?worker&url';
-import { encodeWav } from './wav.js';
+import { encodeWav, floatToInt16 } from './wav.js';
 
 export const BUFFER_SIZE = 2048;
 export const HOP_SIZE = 512;
@@ -88,7 +88,7 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
   const node = new AudioWorkletNode(ctx, 'autotune', {
     numberOfInputs: 1,
     numberOfOutputs: 1,
-    outputChannelCount: [1],
+    outputChannelCount: [2], // stereo: doubles, harmonies and reverb are spread out
     processorOptions: { bufferSize: BUFFER_SIZE, hopSize: HOP_SIZE },
   });
   let dspLatency = 0; // samples, reported by the worklet
@@ -103,18 +103,24 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
 
   // Recording: the recorder worklet streams batches of samples while a take
   // is running; they are collected here and turned into a WAV at the end.
-  const recorder = new AudioWorkletNode(ctx, 'recorder', { numberOfInputs: 1, numberOfOutputs: 0 });
+  const recorder = new AudioWorkletNode(ctx, 'recorder', {
+    numberOfInputs: 1,
+    numberOfOutputs: 0,
+    channelCount: 2,
+    channelCountMode: 'explicit',
+  });
   node.connect(recorder);
   let take = null; // { chunks, samples, stopped: Promise | null, resolve }
   recorder.port.onmessage = (e) => {
     if (!take) return;
     if (e.data.type === 'chunk') {
-      take.chunks.push(e.data.samples);
-      take.samples += e.data.samples.length;
+      // Store as int16 right away: half the memory of floats for long takes.
+      take.chunks.push(floatToInt16(e.data.samples));
+      take.samples += e.data.samples.length / 2; // frames (stereo)
     } else if (e.data.type === 'done') {
       const { chunks, samples, resolve } = take;
       take = null;
-      const wav = encodeWav(chunks, ctx.sampleRate);
+      const wav = encodeWav(chunks, ctx.sampleRate, 2);
       resolve({ blob: new Blob([wav], { type: 'audio/wav' }), duration: samples / ctx.sampleRate });
     }
   };

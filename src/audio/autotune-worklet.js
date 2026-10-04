@@ -1,9 +1,9 @@
 // AudioWorklet processor. Only wiring lives here; the DSP is in src/dsp/.
 //
 // Continuous values arrive as AudioParams (retuneMs, mix). Discrete settings
-// arrive as port messages ({ type: 'options', key, scale, transpose,
-// formantShift, humanize }). Detected pitch goes back as
-// { type: 'pitch', freq, confidence, targetMidi }.
+// arrive as port messages ({ type: 'options', options: { key, scale, transpose,
+// formantShift, humanize, harmonies, doubles, reverb } }). Detected pitch goes
+// back as { type: 'pitch', freq, confidence, targetMidi }. Output is stereo.
 
 import { createAutotune } from '../dsp/autotune.js';
 
@@ -33,12 +33,12 @@ class AutotuneProcessor extends AudioWorkletProcessor {
 
   process(inputs, outputs, parameters) {
     const input = inputs[0]?.[0];
-    const output = outputs[0][0];
+    const [left, right] = outputs[0];
     if (!input) return true; // Mic not connected yet; output stays silent.
 
     this.params.retuneMs = parameters.retuneMs[0];
     this.params.mix = parameters.mix[0];
-    this.autotune.process(input, output, this.params);
+    this.autotune.process(input, left, right, this.params);
 
     // Throttle messages so the main thread is not flooded.
     this.samplesSinceReport += input.length;

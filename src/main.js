@@ -31,10 +31,11 @@ let debugTimer = 0;
 
 const recorderUI = createRecorderUI(document.querySelector('#recorder'), () => engine);
 
-/** Discrete options sent to the worklet. */
+/** Discrete options sent to the worklet (everything a preset decides, plus key and scale). */
 function dspOptions() {
   const { preset, key, scale } = state;
-  return { key, scale, transpose: preset.transpose, formantShift: preset.formantShift, humanize: preset.humanize };
+  const { transpose, formantShift, humanize, harmonies, doubles, reverb } = preset;
+  return { key, scale, transpose, formantShift, humanize, harmonies, doubles, reverb };
 }
 
 function effectiveVolume() {
@@ -43,7 +44,8 @@ function effectiveVolume() {
 
 const settings = createSettings(document.querySelector('#settings'), state, (change) => {
   Object.assign(state, change);
-  if ('key' in change || 'scale' in change) engine?.setOptions(dspOptions());
+  // Only key/scale: resending the voices would restart the doubles' delay lines.
+  if ('key' in change || 'scale' in change) engine?.setOptions({ key: state.key, scale: state.scale });
   if ('retuneMs' in change) engine?.setRetuneMs(state.retuneMs);
   if ('mix' in change) engine?.setMix(state.mix);
   if ('monitorVolume' in change) engine?.setMonitorVolume(effectiveVolume());

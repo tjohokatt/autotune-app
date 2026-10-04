@@ -22,5 +22,25 @@ describe('presets', () => {
     expect(p.formantShift).toBeLessThan(2);
     expect(p.mix).toBeGreaterThanOrEqual(0);
     expect(p.mix).toBeLessThanOrEqual(1);
+
+    expect(Array.isArray(p.harmonies)).toBe(true);
+    for (const h of p.harmonies) {
+      expect(Number.isInteger(h.steps) && h.steps !== 0).toBe(true);
+      expect(h.gain).toBeGreaterThan(0);
+      expect(Math.abs(h.pan)).toBeLessThanOrEqual(1);
+    }
+    if (p.doubles) {
+      expect(p.doubles.count).toBeGreaterThan(0);
+      expect(p.doubles.delayMs.every((ms) => ms >= 0 && ms <= 50)).toBe(true);
+      expect(Math.abs(p.doubles.pan)).toBeLessThanOrEqual(1);
+    }
+    // Total voices must fit the preallocated pool in dsp/autotune.js.
+    expect(p.harmonies.length + (p.doubles?.count ?? 0)).toBeLessThanOrEqual(6);
+    if (p.reverb) {
+      expect(p.reverb.mix).toBeGreaterThan(0);
+      expect(p.reverb.mix).toBeLessThanOrEqual(1);
+      expect(p.reverb.size).toBeGreaterThanOrEqual(0);
+      expect(p.reverb.size).toBeLessThanOrEqual(1);
+    }
   });
 });

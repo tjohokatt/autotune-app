@@ -48,3 +48,23 @@ export function chooseTarget(midi, prevTarget, key, scale, hysteresis = 0.3) {
   }
   return candidate;
 }
+
+/**
+ * The note `steps` scale degrees above integer MIDI note `note` (negative =
+ * below). Harmonies use this so a "third" (2 steps) or "fifth" (4 steps)
+ * stays in the key, becoming a major or minor third depending on where in
+ * the scale you are, like a hardware harmonizer.
+ *
+ * In the chromatic scale every semitone is a "step", which would make a
+ * third only 2 semitones. Harmonies then use the major scale of the key.
+ */
+export function scaleStep(note, steps, key, scale) {
+  const s = scale === 'chromatic' ? 'major' : scale;
+  const dir = Math.sign(steps);
+  let n = note;
+  for (let left = Math.abs(steps); left > 0; ) {
+    n += dir;
+    if (inScale(n, key, s)) left--;
+  }
+  return n;
+}

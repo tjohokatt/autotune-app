@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SCALES, inScale, snapToScale, chooseTarget } from '../src/dsp/scales.js';
+import { SCALES, inScale, snapToScale, chooseTarget, scaleStep } from '../src/dsp/scales.js';
 
 const C = 0;
 const D = 2;
@@ -51,5 +51,31 @@ describe('scales', () => {
 
   it('chooseTarget drops a previous note that left the scale', () => {
     expect(chooseTarget(61.4, 61, C, 'major')).toBe(62);
+  });
+});
+
+describe('scaleStep (diatonic intervals)', () => {
+  it('stacks thirds and fifths inside C major', () => {
+    expect(scaleStep(60, 2, C, 'major')).toBe(64); // C → E (major third)
+    expect(scaleStep(62, 2, C, 'major')).toBe(65); // D → F (minor third)
+    expect(scaleStep(60, 4, C, 'major')).toBe(67); // C → G (fifth)
+    expect(scaleStep(71, 4, C, 'major')).toBe(77); // B → F (diminished fifth, like a harmonizer)
+  });
+
+  it('goes down with negative steps', () => {
+    expect(scaleStep(64, -2, C, 'major')).toBe(60);
+  });
+
+  it('follows the key', () => {
+    expect(scaleStep(62, 2, D, 'major')).toBe(66); // D → F# in D major
+  });
+
+  it('uses the major scale of the key for chromatic harmonies', () => {
+    expect(scaleStep(60, 2, C, 'chromatic')).toBe(64);
+    expect(scaleStep(60, 4, C, 'chromatic')).toBe(67);
+  });
+
+  it('works from a note outside the scale', () => {
+    expect(scaleStep(61, 2, C, 'major')).toBe(64); // C# → D (1), E (2)
   });
 });
