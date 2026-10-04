@@ -25,12 +25,43 @@
           <span class="meter-label">+50</span>
         </div>
         <div class="freq" data-freq></div>
+        <div class="target" data-target></div>
       </section>
 
       <p id="message" class="message" role="alert" hidden></p>
 
       <button id="start" class="big-button" type="button">Starta</button>
       <button id="resume" class="big-button secondary" type="button" hidden>Tryck för att fortsätta</button>
+
+      <button id="monitor" class="toggle-button" type="button" aria-pressed="false">🎧 Hör mig själv: AV</button>
+      <p id="headphones-tip" class="tip" hidden>
+        🎧 <strong>Använd hörlurar med sladd!</strong> Annars tjuter det i högtalaren, och trådlösa lurar gör att ljudet kommer för sent.
+      </p>
+
+      <section class="styles" aria-labelledby="styles-heading">
+        <h2 id="styles-heading">Välj stil</h2>
+        <div id="presets" class="preset-grid"></div>
+      </section>
+
+      <details id="settings" class="panel">
+        <summary>⚙️ Inställningar</summary>
+        <div class="settings-grid">
+          <label for="key">Tonart</label>
+          <select id="key"></select>
+
+          <label for="scale">Skala</label>
+          <select id="scale"></select>
+
+          <label for="retune">Rättningsfart <output id="retune-value" for="retune"></output></label>
+          <input id="retune" type="range" min="0" max="200" step="5" />
+
+          <label for="mix">Autotune-mängd <output id="mix-value" for="mix"></output></label>
+          <input id="mix" type="range" min="0" max="100" step="5" />
+
+          <label for="volume">Medhörningsvolym <output id="volume-value" for="volume"></output></label>
+          <input id="volume" type="range" min="0" max="100" step="5" />
+        </div>
+      </details>
 
       <details class="debug">
         <summary>Teknisk info</summary>

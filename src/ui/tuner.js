@@ -1,7 +1,8 @@
-// Live tuner display: note name, cents text and a needle meter.
+// Live tuner display: sung note, cents text, needle meter and the note the
+// autotune is pulling towards.
 // Pitch messages arrive ~30×/s; drawing happens once per animation frame.
 
-import { describePitch } from '../dsp/notes.js';
+import { describePitch, noteName } from '../dsp/notes.js';
 
 const HOLD_MS = 400; // keep showing the last note briefly through short gaps
 
@@ -10,8 +11,9 @@ export function createTuner(root) {
   const centsEl = root.querySelector('[data-cents]');
   const needleEl = root.querySelector('[data-needle]');
   const freqEl = root.querySelector('[data-freq]');
+  const targetEl = root.querySelector('[data-target]');
 
-  let latest = null; // { freq, confidence, at }
+  let latest = null; // { freq, confidence, targetMidi, at }
   let lastPitched = null; // last message that had a pitch
   let raf = 0;
 
@@ -26,6 +28,7 @@ export function createTuner(root) {
       root.dataset.tune = 'none';
       needleEl.style.setProperty('--cents', 0);
       freqEl.textContent = '';
+      targetEl.textContent = '';
       return;
     }
 
@@ -36,6 +39,7 @@ export function createTuner(root) {
     root.dataset.tune = Math.abs(cents) < 10 ? 'good' : Math.abs(cents) < 25 ? 'close' : 'off';
     needleEl.style.setProperty('--cents', cents.toFixed(1));
     freqEl.textContent = `${shown.freq.toFixed(1)} Hz`;
+    targetEl.textContent = shown.targetMidi != null ? `🎶 Blir: ${noteName(shown.targetMidi)}` : '';
   }
 
   return {
@@ -55,6 +59,7 @@ export function createTuner(root) {
       root.dataset.tune = 'none';
       needleEl.style.setProperty('--cents', 0);
       freqEl.textContent = '';
+      targetEl.textContent = '';
     },
   };
 }
