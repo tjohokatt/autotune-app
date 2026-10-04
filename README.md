@@ -1,12 +1,12 @@
 # Autotune
 
-A browser-based autotune app for singing at home. Sing into the mic and see (and later hear) your voice pitch-corrected in near real time. Everything runs in the browser: no backend, no accounts, and no audio ever leaves the device.
+A browser-based autotune app for singing at home. Sing into the mic and hear your voice pitch-corrected in near real time, in styles from subtle to full robot. Everything runs in the browser: no backend, no accounts, and no audio ever leaves the device.
 
 **Live site:** coming in phase 4 (GitHub Pages: `https://tjohokatt.github.io/autotune-app/`).
 
 ## Status
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.
-- ⏳ Phase 2: Autotune (PSOLA pitch shifting, styles, live monitoring)
+- ✅ Phase 2: Autotune. TD-PSOLA pitch shifting, five styles, live monitoring and settings (key, scale, retune speed, mix, volume).
 - ⏳ Phase 3: Record, play back and download
 - ⏳ Phase 4: Deploy to GitHub Pages
 
@@ -30,13 +30,28 @@ The microphone only works in a secure context, which is why the dev server uses 
 2. Open it on the phone (same Wi-Fi) and accept the certificate warning (Safari: "Show Details → visit this website"; Chrome: "Advanced → Proceed").
 3. Tap **Starta** and allow the microphone.
 
-Use wired headphones once live monitoring arrives in phase 2. Bluetooth adds a lot of latency.
+Turn on **🎧 Hör mig själv** only with wired headphones. Without them the speaker feeds back into the mic, and Bluetooth adds 150–250 ms of delay.
 
 ## How it works
 ```
-getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") → destination
-                                     └─ YIN pitch detection → { freq, confidence } → UI
+getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") → GainNode (monitor) → destination
+                                     ├─ ↓2 → YIN pitch detection → nearest note in key/scale
+                                     ├─ retune smoothing (retuneMs, humanize) → shift ratio
+                                     ├─ TD-PSOLA pitch shift (+ optional formant shift)
+                                     └─ crossfade to dry when no clear pitch (breaths, consonants)
 ```
+Styles are plain objects in `src/presets.js`; adding a style means adding an object.
+
+| Style | Retune | Scale | Transpose | Formants |
+|---|---|---|---|---|
+| 🌿 Naturlig | 100 ms, 30 % humanize | chromatic | 0 | – |
+| 🌟 Popstjärna | 20 ms | major | 0 | – |
+| 🤖 Robot | 0 ms | chromatic | 0 | – |
+| 🐿️ Jordekorre | 0 ms | chromatic | +12 | ×1.5 |
+| 👹 Monster | 20 ms | chromatic | −12 | ×0.75 |
+
+Latency added by the autotune is ~27 ms (two periods of the lowest voice, 75 Hz). The total also depends on the device's audio output; the **Teknisk info** panel shows the measured numbers.
+
 - The mic is opened with echo cancellation, noise suppression and auto gain **off**, since those filters ruin pitch detection.
 - DSP lives in pure functions in `src/dsp/` and is unit-tested with synthetic signals. `src/audio/autotune-worklet.js` only wires them together.
 - See [CLAUDE.md](CLAUDE.md) for the full architecture and project conventions.
