@@ -22,6 +22,16 @@ function pitchAt(signal, start) {
 }
 
 describe('autotune chain', () => {
+  it.each([82.41, 220, 440, 523.25, 987.77])('detects %f Hz within ±5 cents despite the 2× decimation', (freq) => {
+    for (const sr of [44100, 48000]) {
+      const at = createAutotune(sr);
+      const sig = sawtooth(freq, sr, sr / 2);
+      const out = new Float32Array(BLOCK);
+      for (let i = 0; i < sig.length; i += BLOCK) at.process(sig.subarray(i, i + BLOCK), out, { retuneMs: 0, mix: 1 });
+      expect(Math.abs(centsBetween(at.status.freq, freq))).toBeLessThan(5);
+    }
+  });
+
   it('pulls an out-of-tune note to the nearest semitone (robot)', () => {
     const sung = 450; // A4 + 39 cents
     const { out, status } = run(sawtooth(sung, SR, SR), { scale: 'chromatic' });

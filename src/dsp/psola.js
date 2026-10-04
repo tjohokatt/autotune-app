@@ -101,16 +101,16 @@ export function createPsola(sampleRate, { minFreq = 75 } = {}) {
       const f = voiced ? formant : 1;
       const hop = T / r; // output grain spacing → new pitch
 
-      // Grain half-width in the input: one period, but no more than one
-      // *output* period when shifting up. Classic 2T grains overlap 2·ratio
-      // times going up and cancel each other on smooth (sine-like) voices.
-      // Whistling an octave up would come out nearly silent.
-      const half = Math.min(T, hop);
+      // Grain half-width in the input: one period, but once pasted (÷ f) no
+      // wider than one *output* period. Classic 2T grains overlap 2·ratio
+      // times going up and cancel each other on smooth (sine-like) voices, so
+      // whistling an octave up would come out nearly silent.
+      const half = Math.min(T, hop * f);
 
-      // Overlapping Hann windows sum to `overlap`. The overlapping grains are
-      // only partly correlated, so normalise power (√) rather than amplitude.
-      // When shifting down the grains leave gaps (that's how PSOLA lowers a
-      // voice), and a moderate boost keeps it from sounding much quieter.
+      // Hann windows of pasted half-width `half / f`, spaced `hop` apart, sum
+      // to `overlap` ≤ 1 (exactly 1 when shifting up). When shifting down the
+      // grains leave gaps (that's how PSOLA lowers a voice). A moderate
+      // power-based boost keeps it from sounding much quieter.
       const overlap = half / f / hop;
       const gain = Math.min(1.5, 1 / Math.sqrt(overlap));
 
