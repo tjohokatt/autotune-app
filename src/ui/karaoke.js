@@ -7,7 +7,18 @@
 
 import { listSongs, getSong, saveSong, deleteSong } from '../karaoke/library.js';
 import { listFolderSongs, getFolderSong, saveFolderSong } from '../karaoke/folder.js';
-import { parseLrc, lineIndexAt, wordsSungAt, toLrc, hasTimeTags, parseKey } from '../karaoke/lrc.js';
+import {
+  parseLrc,
+  lineIndexAt,
+  wordFills,
+  toLrc,
+  hasTimeTags,
+  parseKey,
+  tapsToTimes,
+  offsetOf,
+  withOffset,
+  LEAD_S,
+} from '../karaoke/lrc.js';
 
 /** Plain lyric lines from either LRC or plain text (for the timing editor). */
 export function plainLines(text) {
@@ -58,6 +69,9 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   const syncBtn = $('#song-sync');
   const deleteBtn = $('#song-delete');
   const uploadBtn = $('#song-upload');
+  const earlierBtn = $('#lyrics-earlier');
+  const laterBtn = $('#lyrics-later');
+  const offsetEl = $('#lyrics-offset');
   const volumeEl = $('#backing-volume');
   const statusEl = $('#song-status');
   const form = $('#song-form');
@@ -127,6 +141,11 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
     deleteBtn.hidden = !song || song.folder;
     uploadBtn.hidden = !song || song.folder || folderSongs === null;
     lyricsEl.hidden = !song;
+    const offset = song ? offsetOf(song.lrc) / 1000 : 0;
+    earlierBtn.disabled = laterBtn.disabled = !timed;
+    offsetEl.textContent = offset
+      ? `Texten visas ${Math.abs(offset).toFixed(1).replace('.', ',')} s ${offset > 0 ? 'tidigare' : 'senare'}`
+      : '';
     playBtn.hidden = !song;
     playBtn.disabled = !engineOn || !timed;
     playBtn.textContent = playing ? '⏹ Stoppa låten' : '▶ Spela låten';
@@ -150,26 +169,22 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
       if (i < 0 && lines[0]) nextEl.textContent = lines[0].text;
       return;
     }
-    if (line.words) {
-      // Word-by-word fill: sung words get the "sung" class.
-      const sung = wordsSungAt(line, t);
-      currentEl.replaceChildren(
-        ...line.words.map((w, k) => {
-          const span = document.createElement('span');
-          span.textContent = w.text;
-          if (k < sung) span.className = 'sung';
-          return span;
-        }),
-      );
-    } else {
-      currentEl.textContent = line.text;
-    }
+    // Karaoke fill: each word gets a --fill of 0–100 % (see .lyric.current span).
+    currentEl.replaceChildren(
+      ...wordFills(lines, i, t).map(({ text, fill }) => {
+        const span = document.createElement('span');
+        span.textContent = text;
+        span.style.setProperty('--fill', `${(fill * 100).toFixed(1)}%`);
+        return span;
+      }),
+    );
   }
 
   function tick() {
     const t = getEngine()?.backingTime();
     if (t == null) return;
-    showLines(lineIndexAt(parsed.lines, t), t);
+    // The line shows up LEAD_S early; its words fill from the real start.
+    showLines(lineIndexAt(parsed.lines, t + LEAD_S), t);
     frame = requestAnimationFrame(tick);
   }
 
@@ -199,6 +214,23 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   playBtn.addEventListener('click', () => (playing ? stopSong() : playSong()));
   selectEl.addEventListener('change', () => select(selectEl.value));
   volumeEl.addEventListener('input', () => getEngine()?.setBackingVolume(Number(volumeEl.value) / 100));
+
+  /** Move the lyrics by `ms` (positive = earlier) and save it with the song. */
+  async function shiftLyrics(ms) {
+    if (!song) return;
+    song.lrc = withOffset(song.lrc, offsetOf(song.lrc) + ms);
+    parsed = parseLrc(song.lrc);
+    render();
+    try {
+      if (song.folder) await saveFolderSong(song.id, { lrc: song.lrc });
+      else await saveSong(song);
+    } catch (err) {
+      console.error(err);
+      showMessage('Det gick inte att spara tidsjusteringen.');
+    }
+  }
+  earlierBtn.addEventListener('click', () => shiftLyrics(200));
+  laterBtn.addEventListener('click', () => shiftLyrics(-200));
 
   deleteBtn.addEventListener('click', async () => {
     if (!song || song.folder || !confirm(`Ta bort "${song.title}"?`)) return;
@@ -315,7 +347,7 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
     syncAudio.pause();
     syncEl.hidden = true;
     if (save && syncTimes.length) {
-      const lines = syncTimes.map((time, k) => ({ time, text: syncLines[k] }));
+      const lines = tapsToTimes(syncTimes).map((time, k) => ({ time, text: syncLines[k] }));
       const key = parsed?.meta.key;
       song.lrc = toLrc(lines, { ti: song.title, ...(key ? { key } : {}) });
       try {

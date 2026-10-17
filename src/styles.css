@@ -595,8 +595,13 @@ h1 {
   font-size: 1.7rem;
   font-weight: 800;
 }
-.lyric.current .sung {
-  color: var(--accent-2);
+.lyric.current span {
+  /* Karaoke fill: the sung part of each word (--fill) in the accent colour. */
+  white-space: pre;
+  background: linear-gradient(90deg, var(--accent-2) var(--fill, 0%), var(--text) var(--fill, 0%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .song-status {
   margin: 0;
@@ -617,7 +622,8 @@ h1 {
   align-items: center;
 }
 .song-tools label,
-.song-tools input {
+.song-tools input,
+.song-tools .song-status {
   grid-column: 1 / -1;
 }
 .song-form {

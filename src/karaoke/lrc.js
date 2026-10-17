@@ -82,14 +82,6 @@ export function lineIndexAt(lines, t) {
   return found;
 }
 
-/** Number of words in `line` that have started at time t. */
-export function wordsSungAt(line, t) {
-  if (!line?.words) return 0;
-  let n = 0;
-  while (n < line.words.length && line.words[n].time <= t) n++;
-  return n;
-}
-
 /** Write lines (and optional metadata) as LRC text. */
 export function toLrc(lines, meta = {}) {
   const head = Object.entries(meta)
@@ -120,4 +112,62 @@ export function parseKey(tag) {
   const quality = (m[3] ?? '').toLowerCase();
   const minor = quality === 'm' || quality === 'min' || quality === 'minor' || quality === 'moll';
   return { key: (key + 12) % 12, scale: minor ? 'minor' : 'major' };
+}
+
+// People tap a beat or two after they hear a line start, so taps from the
+// timing editor are moved this much earlier before they are saved.
+export const REACTION_S = 0.3;
+
+// A line is shown this long before it starts, so the singer can read ahead.
+export const LEAD_S = 0.5;
+
+// Without per-word times a line is assumed to be sung at about this many
+// seconds per word, unless the next line starts sooner.
+const SECONDS_PER_WORD = 0.45;
+
+/** Tap times from the timing editor → line start times. */
+export function tapsToTimes(taps) {
+  return taps.map((t) => Math.max(0, t - REACTION_S));
+}
+
+/** The [offset:] tag in milliseconds (positive = lyrics earlier), or 0. */
+export function offsetOf(text) {
+  return Number(/^\s*\[offset:\s*([+-]?\d+)\s*\]/im.exec(text)?.[1] ?? 0);
+}
+
+/** Set, replace or (for 0) remove the [offset:] tag. */
+export function withOffset(text, ms) {
+  const rest = text.replace(/^\s*\[offset:.*\]\s*\n?/im, '');
+  return ms ? `[offset:${ms > 0 ? '+' : ''}${Math.round(ms)}]\n${rest}` : rest;
+}
+
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+/**
+ * How far each word of lines[i] has been sung at time t, for the karaoke fill:
+ * [{ text, fill: 0…1 }]. Words keep their trailing spaces.
+ * With per-word times each word fills between its start and the next word's
+ * start; otherwise the whole line fills from its start to its estimated end,
+ * character by character.
+ */
+export function wordFills(lines, i, t) {
+  const line = lines[i];
+  if (!line) return [];
+  const next = lines[i + 1]?.time ?? Infinity;
+  if (line.words) {
+    return line.words.map((w, k) => {
+      const end = line.words[k + 1]?.time ?? Math.min(next, w.time + 1);
+      return { text: w.text, fill: clamp01((t - w.time) / Math.max(0.05, end - w.time)) };
+    });
+  }
+  const words = line.text.match(/\S+\s*/g) ?? [];
+  const end = Math.min(next - 0.1, line.time + Math.max(1, words.length * SECONDS_PER_WORD));
+  const total = words.reduce((n, w) => n + w.trimEnd().length, 0);
+  let sung = clamp01((t - line.time) / Math.max(0.1, end - line.time)) * total;
+  return words.map((text) => {
+    const len = text.trimEnd().length;
+    const fill = clamp01(sung / len);
+    sung -= len;
+    return { text, fill };
+  });
 }
