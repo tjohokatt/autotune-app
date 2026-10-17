@@ -28,7 +28,7 @@ export class EngineError extends Error {
   }
 }
 
-function friendlyError(err) {
+export function friendlyError(err) {
   switch (err?.name) {
     case 'NotAllowedError':
     case 'SecurityError':

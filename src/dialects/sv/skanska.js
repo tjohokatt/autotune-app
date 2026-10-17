@@ -35,5 +35,7 @@ export default {
   },
   rules: [],
   endings: [', ju', ', hörru'],
+  // Rise-fall melody, a bit slower and lower.
+  voice: { melody: [0, 2, 3, 0, -3], flatten: 1.3, shift: -1, tempo: 0.92 },
   speech: { rate: 0.95, pitch: 0.95, voiceLangs: ['sv-SE'] },
 };

@@ -4,7 +4,7 @@ A browser-based autotune app for singing at home. Sing into the mic and hear you
 
 **Live site:** coming in phase 4 (GitHub Pages: `https://tjohokatt.github.io/autotune-app/`).
 
-The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektförvrängare** (dialect changer): type a sentence, pick Skånska, Göteborgska, Stockholmska, Norrländska or Finlandssvenska, and hear it read aloud by the device's built-in voice.
+The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektförvrängare** (dialect changer): type a sentence, pick Skånska, Göteborgska, Stockholmska, Norrländska or Finlandssvenska, and hear it read aloud by the device's built-in voice. You can also record yourself (up to 10 s): **🎤 Din röst på dialekt** keeps your own voice but gives it the dialect's melody and tempo, and **🤖 Datorn säger det** turns what you said into text on the device (Whisper; the model, ~80 MB, downloads once on first use), rewrites it and reads it aloud.
 
 ## Status
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.

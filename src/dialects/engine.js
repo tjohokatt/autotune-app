@@ -10,6 +10,8 @@
 //   endings   short tags appended to the text (", typ"); one is picked from
 //             the text itself so the result doesn't flicker while typing.
 //   speech    { rate, pitch, voiceLangs } for speechSynthesis.
+//   voice     { melody, flatten, shift, tempo } applied to a recorded voice
+//             (see src/dialects/voice.js).
 
 // Letters including åäö and other accented letters; digits count as word chars.
 const TOKEN = /[\p{L}\p{N}]+|[^\p{L}\p{N}]+/gu;

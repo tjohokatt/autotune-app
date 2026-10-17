@@ -9,9 +9,9 @@ The start page (`#/`) lets you pick a mode. Each mode is its own view (`<main da
 | Route | Mode | Status |
 |---|---|---|
 | `#/autotune` | Autotune + karaoke (lyrics and backing track) | ✅ |
-| `#/dialekt` | Dialektförvrängare (dialect changer) | ✅ text + read-aloud |
+| `#/dialekt` | Dialektförvrängare (dialect changer) | ✅ text, recorded voice, read-aloud |
 
-Dialects are plain objects (like presets) under `src/dialects/<lang>/`, listed in `src/dialects/index.js`; the format is documented at the top of `src/dialects/engine.js`. Swedish first; English dialects go in `src/dialects/en/` with `lang: 'en'`. Read-aloud uses the device's `speechSynthesis` voices. Don't use the Web Speech *recognition* API: it sends audio to a server. Karaoke songs ("Mina låtar") are added by the user from local files (audio + LRC or plain text, timed with the tap-along editor) and stored in IndexedDB (`src/karaoke/library.js`). Never bundle copyrighted lyrics or music. The backing track plays through the engine's `backing` gain, which feeds both the speakers and the recorder.
+Dialects are plain objects (like presets) under `src/dialects/<lang>/`, listed in `src/dialects/index.js`; the format is documented at the top of `src/dialects/engine.js`. Swedish first; English dialects go in `src/dialects/en/` with `lang: 'en'`. Read-aloud uses the device's `speechSynthesis` voices. Don't use the Web Speech *recognition* API: it sends audio to a server. A recorded voice gets the dialect's melody/tempo offline (`src/dialects/voice.js`, YIN + PSOLA), or is transcribed on the device with Whisper (`src/dialects/whisper-worker.js`). That worker is the one exception to "no CDNs": it loads transformers.js from jsDelivr and the model from Hugging Face on first use, and the browser caches them. The audio itself never leaves the device. Karaoke songs ("Mina låtar") are added by the user from local files (audio + LRC or plain text, timed with the tap-along editor) and stored in IndexedDB (`src/karaoke/library.js`). Never bundle copyrighted lyrics or music. The backing track plays through the engine's `backing` gain, which feeds both the speakers and the recorder.
 
 ## Core requirements
 - Sing into the mic (desktop USB mic **or** phone mic) and hear yourself autotuned in near real time.

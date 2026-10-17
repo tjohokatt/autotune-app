@@ -23,5 +23,7 @@ export default {
   },
   rules: [],
   endings: [', vettu', ', du', ', int sant'],
+  // Calm, low and steady.
+  voice: { melody: [0, -1, -1, -2, -2], flatten: 0.6, shift: -2, tempo: 0.85 },
   speech: { rate: 0.85, pitch: 0.9, voiceLangs: ['sv-SE'] },
 };
