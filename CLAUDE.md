@@ -11,7 +11,7 @@ The start page (`#/`) lets you pick a mode. Each mode is its own view (`<main da
 | `#/autotune` | Autotune + karaoke (lyrics and backing track) | ✅ |
 | `#/dialekt` | Dialektförvrängare (dialect changer) | ✅ text + read-aloud |
 
-Dialects are plain objects (like presets) under `src/dialects/<lang>/`, listed in `src/dialects/index.js`; the format is documented at the top of `src/dialects/engine.js`. Swedish first; English dialects go in `src/dialects/en/` with `lang: 'en'`. Read-aloud uses the device's `speechSynthesis` voices. Don't use the Web Speech *recognition* API: it sends audio to a server. Karaoke songs ("Mina låtar") are added by the user from local files (audio + LRC or plain text, timed with the tap-along editor) and stored in IndexedDB (`src/karaoke/library.js`). Never bundle copyrighted lyrics or music. The backing track plays through the engine's `backing` gain, which feeds both the speakers and the recorder.
+Dialects are plain objects (like presets) under `src/dialects/<lang>/`, listed in `src/dialects/index.js`; the format is documented at the top of `src/dialects/engine.js`. Swedish first; English dialects go in `src/dialects/en/` with `lang: 'en'`. Read-aloud uses the device's `speechSynthesis` voices. Don't use the Web Speech *recognition* API: it sends audio to a server. Karaoke songs ("Mina låtar") are added by the user from local files (audio + LRC or plain text, timed with the tap-along editor) and stored in the git-ignored song folder `songs/` on the computer running the dev/preview server (`tools/song-folder.js` Vite plugin, client in `src/karaoke/folder.js`), so phones on the LAN share them; without that server (GitHub Pages) they fall back to IndexedDB (`src/karaoke/library.js`). Never bundle copyrighted lyrics or music. The backing track plays through the engine's `backing` gain, which feeds both the speakers and the recorder.
 
 ## Core requirements
 - Sing into the mic (desktop USB mic **or** phone mic) and hear yourself autotuned in near real time.
@@ -84,6 +84,7 @@ src/
   dsp/               pitch detection, scales, pitch shifting (pure, tested)
   presets.js
   ui/                small UI modules
+tools/               Vite plugins (song folder API for dev/preview)
 tests/               Vitest tests (synthetic sine/sawtooth signals at known frequencies)
 .github/workflows/deploy.yml
 ```
