@@ -4,7 +4,7 @@ A browser-based autotune app for singing at home. Sing into the mic and hear you
 
 **Live site:** coming in phase 4 (GitHub Pages: `https://tjohokatt.github.io/autotune-app/`).
 
-The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektförvrängare** (dialect changer, coming soon).
+The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektförvrängare** (dialect changer): type a sentence, pick Skånska, Göteborgska, Stockholmska, Norrländska or Finlandssvenska, and hear it read aloud by the device's built-in voice.
 
 ## Status
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.
@@ -12,8 +12,19 @@ The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektf�
 - ✅ Phase 3: Recording. Record the autotuned voice (up to 5 min), play it back and download it as WAV.
 - ⏳ Phase 4: Deploy to GitHub Pages
 - ✅ Phase 5: Start page with mode picker (Autotune / Dialektförvrängare)
-- ⏳ Phase 6: Dialect changer (Swedish dialects first, English later)
-- ⏳ Phase 7: Karaoke lyrics and backing track in autotune
+- ✅ Phase 6: Dialect changer: text rewrite + read-aloud, five Swedish dialects (English later)
+- ✅ Phase 7: Karaoke: lyrics in time with a backing track, mixed into the recording
+
+## Karaoke
+In autotune, **🎶 Karaoke → ➕ Ny låt** adds a song from your own files:
+
+- **Music:** an mp3/m4a/wav backing track, e.g. a bought instrumental or karaoke version.
+- **Lyrics:** an `.lrc` file with times (`[00:12.40]A line`), or plain text with one line per sung line. Plain text opens the **⏱️ Tidsätt texten** editor: play the song and tap **Nu!** as each line starts.
+- **Tonart (optional):** e.g. `Am`. It's stored as a `[key:Am]` tag and sets the autotune key and scale when the song is selected.
+
+Songs are stored in the browser (IndexedDB) and never uploaded. No lyrics or music are included in the app, since songs are copyrighted.
+
+Tap **Starta**, then **▶ Spela låten**. The lyrics follow the music, and if you record at the same time, the backing track is mixed into the take. Use headphones: through speakers the mic picks up the music.
 
 ## Running locally
 Requires Node.js 20+.

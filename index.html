@@ -33,11 +33,21 @@
         <a class="back-link" href="#/" aria-label="Tillbaka till start">←</a>
         <h1>🗣️ Dialekter</h1>
       </header>
-      <section class="panel coming-soon">
-        <p class="coming-emoji" aria-hidden="true">🚧</p>
-        <p><strong>Kommer snart!</strong></p>
-        <p>Här ska du kunna skriva en mening och höra den på skånska, göteborgska, norrländska och fler dialekter.</p>
+      <label class="field-label" for="dialect-input">Skriv en mening</label>
+      <textarea id="dialect-input" class="text-input" rows="3" maxlength="300" placeholder="T.ex. Hej! Jag vill ha mycket glass nu."></textarea>
+      <button id="dialect-example" class="toggle-button" type="button">🎲 Ge mig ett exempel</button>
+
+      <section class="styles" aria-labelledby="dialects-heading">
+        <h2 id="dialects-heading">Välj dialekt</h2>
+        <div id="dialects" class="preset-grid"></div>
       </section>
+
+      <section class="dialect-result" aria-live="polite">
+        <p id="dialect-output" class="dialect-output empty"></p>
+      </section>
+
+      <p id="dialect-message" class="message" role="alert" hidden></p>
+      <button id="dialect-speak" class="big-button" type="button">🔊 Läs upp</button>
     </main>
 
     <main class="app" data-view="autotune" hidden>
@@ -65,6 +75,61 @@
 
       <button id="start" class="big-button" type="button">Starta</button>
       <button id="resume" class="big-button secondary" type="button" hidden>Tryck för att fortsätta</button>
+
+      <section id="karaoke" class="karaoke" aria-labelledby="karaoke-heading">
+        <h2 id="karaoke-heading">🎶 Karaoke</h2>
+        <div class="karaoke-row">
+          <select id="song-select" aria-label="Välj låt"></select>
+          <button id="song-add" class="small-button" type="button">➕ Ny låt</button>
+        </div>
+
+        <div id="lyrics" class="lyrics" aria-live="polite" hidden>
+          <p class="lyric prev"></p>
+          <p class="lyric current"></p>
+          <p class="lyric next"></p>
+        </div>
+        <p id="song-status" class="song-status"></p>
+        <button id="song-play" class="big-button play-button" type="button" hidden>▶ Spela låten</button>
+
+        <div id="song-tools" class="song-tools" hidden>
+          <label for="backing-volume">Musikvolym</label>
+          <input id="backing-volume" type="range" min="0" max="100" step="5" value="80" />
+          <button id="song-sync" class="small-button" type="button">⏱️ Tidsätt texten</button>
+          <button id="song-delete" class="small-button secondary" type="button">🗑️ Ta bort</button>
+        </div>
+
+        <form id="song-form" class="song-form" hidden>
+          <label for="song-title">Låtens namn</label>
+          <input id="song-title" type="text" maxlength="80" required />
+          <label for="song-audio">Musik (mp3, m4a eller wav)</label>
+          <input id="song-audio" type="file" accept="audio/*" required />
+          <label for="song-lrc-file">Text: välj en .lrc- eller .txt-fil …</label>
+          <input id="song-lrc-file" type="file" accept=".lrc,.txt,text/plain" />
+          <label for="song-lyrics">… eller klistra in texten</label>
+          <textarea id="song-lyrics" class="text-input" rows="6" placeholder="En rad per rad i låten. Har texten inga tider tidsätter du den sedan."></textarea>
+          <label for="song-key">Tonart (valfritt, t.ex. Am)</label>
+          <input id="song-key" type="text" maxlength="10" />
+          <p class="tip">Filerna sparas bara i den här webbläsaren och laddas aldrig upp.</p>
+          <div class="take-actions">
+            <button class="take-button" type="submit">💾 Spara</button>
+            <button id="song-cancel" class="take-button secondary" type="button">Avbryt</button>
+          </div>
+        </form>
+
+        <div id="sync" class="sync" hidden>
+          <p id="sync-progress" class="sync-progress"></p>
+          <p id="sync-line" class="lyric current"></p>
+          <p id="sync-next" class="lyric next"></p>
+          <p class="tip">Tryck på <strong>Nu!</strong> precis när varje rad börjar sjungas.</p>
+          <button id="sync-tap" class="big-button" type="button">▶ Starta musiken</button>
+          <audio preload="auto"></audio>
+          <div class="take-actions">
+            <button id="sync-undo" class="take-button secondary" type="button">↩️ Ångra</button>
+            <button id="sync-done" class="take-button" type="button">✅ Klar</button>
+            <button id="sync-cancel" class="take-button secondary" type="button">Avbryt</button>
+          </div>
+        </div>
+      </section>
 
       <section id="recorder" class="recorder" aria-label="Inspelning">
         <button id="record" class="record-button" type="button" aria-pressed="false">⏺ Spela in</button>
