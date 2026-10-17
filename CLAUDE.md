@@ -3,6 +3,16 @@
 ## What this is
 A browser-based autotune app for fun singing at home. Primary user is a child, so the UI must be playful, simple and work great on a phone. The owner (Jakob) is technical and reviews all changes via GitHub pull requests.
 
+## Modes
+The start page (`#/`) lets you pick a mode. Each mode is its own view (`<main data-view="…">` in `index.html`) and its own folder under `src/modes/`. `src/router.js` is a tiny hash router; leaving a mode must release the mic (see `leaveAutotune()`).
+
+| Route | Mode | Status |
+|---|---|---|
+| `#/autotune` | Autotune (+ karaoke later) | ✅ |
+| `#/dialekt` | Dialektförvrängare (dialect changer) | placeholder |
+
+Dialects are planned as plain objects (like presets) under `src/dialects/<lang>/`, starting with Swedish dialects and with English dialects added later. Karaoke lyrics/backing tracks are loaded by the user from local files (LRC + audio); never bundle copyrighted lyrics or music.
+
 ## Core requirements
 - Sing into the mic (desktop USB mic **or** phone mic) and hear yourself autotuned in near real time.
 - Selectable **styles** (presets) — see "Styles" below.
@@ -63,7 +73,10 @@ Initial set:
 ## Project layout
 ```
 src/
-  main.js            UI wiring
+  main.js            entry: router, switches views
+  router.js          hash router (#/, #/autotune, #/dialekt)
+  modes/autotune/    autotune view wiring
+  modes/dialect/     dialect changer (planned)
   audio/engine.js    AudioContext, mic, node graph
   audio/autotune-worklet.js
   dsp/               pitch detection, scales, pitch shifting (pure, tested)

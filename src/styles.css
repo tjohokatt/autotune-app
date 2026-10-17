@@ -401,3 +401,90 @@ h1 {
   outline: 4px solid var(--text);
   outline-offset: 3px;
 }
+
+/* Start page and per-mode views */
+.subtitle {
+  margin: 8px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 1.2rem;
+}
+.home {
+  justify-content: center;
+}
+.mode-grid {
+  display: grid;
+  gap: 16px;
+}
+.mode-card {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px 16px;
+  border: 3px solid transparent;
+  border-radius: 24px;
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+.mode-card:active {
+  border-color: var(--accent);
+  background: #3d2370;
+}
+.mode-card:focus-visible {
+  outline: 4px solid var(--text);
+  outline-offset: 2px;
+}
+.mode-emoji {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+.mode-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.mode-desc {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.view-header {
+  position: relative;
+}
+.back-link {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.back-link:focus-visible {
+  outline: 4px solid var(--text);
+  outline-offset: 2px;
+}
+.coming-soon {
+  background: var(--panel);
+  border-radius: 24px;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+.coming-emoji {
+  margin: 0;
+  font-size: 3rem;
+}
