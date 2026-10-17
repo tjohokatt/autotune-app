@@ -5,6 +5,10 @@
 // A dialect's `voice` settings:
 //   melody   pitch curve over each phrase, in semitones (points spread evenly
 //            from the start to the end of the phrase, linearly interpolated)
+//   syllable pitch curve over each syllable, in semitones (same format); this
+//            is the word melody that tells dialects apart the most
+//   beat     semitones added per syllable, cycling (e.g. [2, -1] makes every
+//            other syllable high, like a stressed/unstressed pattern)
 //   flatten  how much of the speaker's own pitch movement is kept
 //            (0 = monotone, 1 = unchanged, > 1 = more sing-song)
 //   shift    overall pitch change in semitones
@@ -12,9 +16,12 @@
 //
 // Steps:
 //   1. YIN pitch track every HOP samples (MIDI per frame, or null).
-//   2. Group voiced frames into phrases (pauses ≥ PAUSE_S split them).
-//   3. Per frame: target = median + (pitch − median)·flatten + melody(u) + shift,
-//      where u = 0…1 is the position inside the phrase.
+//   2. Group voiced frames into phrases (pauses ≥ PAUSE_S split them), and
+//      each phrase into syllables: voiced runs split by short unvoiced gaps
+//      (consonants), a cheap stand-in for real syllable detection.
+//   3. Per frame: target = median + (pitch − median)·flatten + melody(u)
+//      + syllable(v) + beat[k] + shift, where u = 0…1 is the position inside
+//      the phrase, v = 0…1 the position inside syllable number k.
 //   4. TD-PSOLA moves each frame from its pitch to the target pitch, divided
 //      by `tempo` (see 5).
 //   5. Resampling by `tempo` changes the length and raises/lowers the pitch
@@ -26,6 +33,7 @@ import { freqToMidi } from '../dsp/notes.js';
 
 const HOP = 256;
 const PAUSE_S = 0.25;
+const SYLLABLE_GAP_S = 0.01; // unvoiced gap that ends a syllable
 const MIN_FREQ = 75;
 
 /** Value of a curve given as evenly spaced points, at u in 0…1. */
@@ -81,21 +89,36 @@ export function phrases(track, framesPerPause) {
   return out;
 }
 
+/** Split frames start…end of a phrase into syllables (voiced runs). */
+export function syllables(track, start, end, framesPerGap = 1) {
+  return phrases(track.slice(start, end), framesPerGap).map((s) => ({ start: s.start + start, end: s.end + start }));
+}
+
 /** Per-frame pitch ratio (output/input) for a voice setting; 1 where unvoiced. */
 export function targetRatios(track, voice, sampleRate, hop = HOP) {
-  const { melody = [0], flatten = 1, shift = 0, tempo = 1 } = voice;
+  const { melody = [0], syllable = [0], beat = [0], flatten = 1, shift = 0, tempo = 1 } = voice;
   const ratios = new Array(track.length).fill(1);
-  for (const { start, end } of phrases(track, Math.round((PAUSE_S * sampleRate) / hop))) {
-    const voiced = track.slice(start, end).filter((m) => m != null);
+  const gap = Math.max(1, Math.round((SYLLABLE_GAP_S * sampleRate) / hop));
+  const position = (f, start, end) => (end - start > 1 ? (f - start) / (end - start - 1) : 0);
+  for (const phrase of phrases(track, Math.round((PAUSE_S * sampleRate) / hop))) {
+    const voiced = track.slice(phrase.start, phrase.end).filter((m) => m != null);
     const center = median(voiced);
-    for (let f = start; f < end; f++) {
-      const m = track[f];
-      if (m == null) continue;
-      const u = end - start > 1 ? (f - start) / (end - start - 1) : 0;
-      const target = center + (m - center) * flatten + curveAt(melody, u) + shift;
-      // ÷ tempo: the final resampling multiplies the pitch by tempo again.
-      ratios[f] = Math.min(2, Math.max(0.5, 2 ** ((target - m) / 12) / tempo));
-    }
+    syllables(track, phrase.start, phrase.end, gap).forEach((syl, k) => {
+      const word = beat[k % beat.length];
+      for (let f = syl.start; f < syl.end; f++) {
+        const m = track[f];
+        if (m == null) continue;
+        const target =
+          center +
+          (m - center) * flatten +
+          curveAt(melody, position(f, phrase.start, phrase.end)) +
+          curveAt(syllable, position(f, syl.start, syl.end)) +
+          word +
+          shift;
+        // ÷ tempo: the final resampling multiplies the pitch by tempo again.
+        ratios[f] = Math.min(2, Math.max(0.5, 2 ** ((target - m) / 12) / tempo));
+      }
+    });
   }
   return ratios;
 }

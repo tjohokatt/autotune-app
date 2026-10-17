@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { curveAt, phrases, targetRatios, changeSpeed, dialectVoice, pitchTrack } from '../src/dialects/voice.js';
+import { curveAt, phrases, syllables, targetRatios, changeSpeed, dialectVoice, pitchTrack } from '../src/dialects/voice.js';
 import { sawtooth, silence, centsBetween } from './signals.js';
 import { midiToFreq } from '../src/dsp/notes.js';
 
@@ -33,7 +33,30 @@ describe('phrases', () => {
   });
 });
 
+describe('syllables', () => {
+  it('splits a phrase at short unvoiced gaps', () => {
+    const t = [null, 60, 60, null, null, 62, 62, 62];
+    expect(syllables(t, 1, 8, 2)).toEqual([
+      { start: 1, end: 3 },
+      { start: 5, end: 8 },
+    ]);
+    // A one-frame dropout does not split when the gap needs two frames.
+    expect(syllables([60, null, 60], 0, 3, 2)).toEqual([{ start: 0, end: 3 }]);
+  });
+});
+
 describe('targetRatios', () => {
+  it('adds the syllable curve and the alternating beat per syllable', () => {
+    // Two syllables of three frames, separated by a two-frame gap (≈ 10 ms at 48 kHz).
+    const track = [60, 60, 60, null, null, 60, 60, 60];
+    const st = (r) => 12 * Math.log2(r);
+    const r = targetRatios(track, { syllable: [0, 2], beat: [1, -1] }, SR);
+    expect(st(r[0])).toBeCloseTo(1); // syllable 0: beat +1, curve 0 → 2
+    expect(st(r[2])).toBeCloseTo(3);
+    expect(st(r[5])).toBeCloseTo(-1); // syllable 1: beat −1
+    expect(st(r[7])).toBeCloseTo(1);
+  });
+
   it('flattens movement around the phrase median', () => {
     const track = [58, 60, 62];
     const r = targetRatios(track, { flatten: 0 }, SR);

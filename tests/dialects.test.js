@@ -50,6 +50,16 @@ describe('translate', () => {
     expect(translate('Det är bra.', d)).toBe(a);
   });
 
+  it('applies each dialect\'s sound rules', () => {
+    const say = (text, id) => translate(text, { ...getDialect(id), endings: [] });
+    expect(say('Kan du se solen? Den är stor och gul.', 'skanska')).toBe('Kan deu sei solen? Den e stour å geul.');
+    expect(say('Som om', 'skanska')).toBe('Som om'); // short vowels stay
+    expect(say('Korven är borta', 'goteborgska')).toBe('Kôrven ä bôrta');
+    expect(say('Jag tittade', 'stockholmska')).toBe('Ja titta');
+    expect(say('Vi ska hoppa och dricka saft med mamma', 'norrlandska')).toBe('Vi ska hopp å drick saft med mamma');
+    expect(say('Sju kyrkor och tjugo kor', 'finlandssvenska')).toBe('Schu tschyrkor och tschugo kor');
+  });
+
   it('leaves empty text alone', () => {
     expect(translate('', getDialect('skanska'))).toBe('');
   });
@@ -94,6 +104,9 @@ describe('dialect voice settings', () => {
       expect(d.voice.melody.length).toBeGreaterThan(0);
       expect(d.voice.tempo).toBeGreaterThan(0.5);
       expect(d.voice.tempo).toBeLessThan(1.5);
+      for (const st of [...d.voice.melody, ...(d.voice.syllable ?? []), ...(d.voice.beat ?? [])]) {
+        expect(Math.abs(st)).toBeLessThanOrEqual(6);
+      }
     }
   });
 });
