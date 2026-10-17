@@ -4,6 +4,7 @@ import { createTuner } from '../../ui/tuner.js';
 import { createPresetPicker } from '../../ui/presets.js';
 import { createSettings } from '../../ui/settings.js';
 import { createRecorderUI } from '../../ui/recorder.js';
+import { createKaraokeUI } from '../../ui/karaoke.js';
 
 const startBtn = document.querySelector('#start');
 const resumeBtn = document.querySelector('#resume');
@@ -57,6 +58,17 @@ createPresetPicker(document.querySelector('#presets'), PRESETS, {
     engine?.setRetuneMs(state.retuneMs);
     engine?.setMix(state.mix);
   },
+});
+
+const karaokeUI = createKaraokeUI(document.querySelector('#karaoke'), {
+  getEngine: () => engine,
+  // A song's [key:…] tag tunes the autotune to that song.
+  onKey({ key, scale }) {
+    Object.assign(state, { key, scale });
+    settings.set(state);
+    engine?.setOptions(dspOptions());
+  },
+  showMessage,
 });
 
 function renderMonitor() {
@@ -119,6 +131,7 @@ async function start() {
     });
     tuner.start();
     recorderUI.setEnabled(true);
+    karaokeUI.setEnabled(true);
     startBtn.textContent = 'Stoppa';
     startBtn.classList.add('running');
     debugTimer = setInterval(renderDebug, 1000);
@@ -137,6 +150,7 @@ async function stop() {
   // Keep a take that is still recording before the audio graph goes away.
   await recorderUI.stop();
   recorderUI.setEnabled(false);
+  karaokeUI.setEnabled(false);
   clearInterval(debugTimer);
   tuner.stop();
   resumeBtn.hidden = true;

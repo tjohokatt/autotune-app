@@ -2,6 +2,8 @@
 //
 //   getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") ─┬→ GainNode (monitor) → destination
 //                                                                   └→ AudioWorkletNode("recorder")
+//   karaoke backing track → GainNode (backing) ─┬→ destination
+//                                               └→ AudioWorkletNode("recorder")
 //
 // The monitor gain starts wherever the UI says (0 = off until the user turns
 // on live monitoring with headphones). The worklet stays connected either way
@@ -50,7 +52,7 @@ function friendlyError(err) {
  * @param {object} cfg
  * @param {(p: {freq: number|null, confidence: number, targetMidi: number|null}) => void} cfg.onPitch
  * @param {(state: AudioContextState) => void} [cfg.onStateChange]
- * @param {{ options: object, retuneMs: number, mix: number, monitorVolume: number }} cfg.settings
+ * @param {{ options: object, retuneMs: number, mix: number, monitorVolume: number, backingVolume?: number }} cfg.settings
  */
 export async function startEngine({ onPitch, onStateChange, settings }) {
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -103,8 +105,62 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
 
   // Recording: the recorder worklet streams batches of samples while a take
   // is running; they are collected here and turned into a WAV at the end.
-  const recorder = new AudioWorkletNode(ctx, 'recorder', { numberOfInputs: 1, numberOfOutputs: 0 });
+  // Mono input: a stereo backing track is downmixed before it is summed with the voice.
+  const recorder = new AudioWorkletNode(ctx, 'recorder', {
+    numberOfInputs: 1,
+    numberOfOutputs: 0,
+    channelCount: 1,
+    channelCountMode: 'explicit',
+    channelInterpretation: 'speakers',
+  });
   node.connect(recorder);
+
+  // Karaoke backing track: always audible (independent of the monitor
+  // switch) and mixed into recordings.
+  const backingGain = ctx.createGain();
+  backingGain.gain.value = settings.backingVolume ?? 0.8;
+  backingGain.connect(ctx.destination);
+  backingGain.connect(recorder);
+  const decoded = new WeakMap(); // Blob → AudioBuffer
+  let backing = null; // { source, startedAt }
+
+  function stopBacking() {
+    if (!backing) return;
+    backing.source.onended = null;
+    backing.source.stop();
+    backing.source.disconnect();
+    backing = null;
+  }
+
+  /**
+   * Play a backing track from the start. Resolves once it is playing.
+   * onEnded fires when the track finishes by itself (not on stopBacking()).
+   */
+  async function playBacking(blob, { onEnded } = {}) {
+    stopBacking();
+    let buffer = decoded.get(blob);
+    if (!buffer) {
+      buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+      decoded.set(blob, buffer);
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(backingGain);
+    // Start slightly in the future so startedAt is exact.
+    const startedAt = ctx.currentTime + 0.05;
+    source.start(startedAt);
+    backing = { source, startedAt };
+    source.onended = () => {
+      backing = null;
+      onEnded?.();
+    };
+  }
+
+  /** Seconds into the backing track as heard (output latency removed), or null. */
+  function backingTime() {
+    if (!backing) return null;
+    return ctx.currentTime - backing.startedAt - (ctx.outputLatency || ctx.baseLatency || 0);
+  }
   let take = null; // { chunks, samples, stopped: Promise | null, resolve }
   recorder.port.onmessage = (e) => {
     if (!take) return;
@@ -154,6 +210,10 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
     setRetuneMs: (ms) => glide(retuneParam, ms),
     setMix: (mix) => glide(mixParam, mix),
     setMonitorVolume: (v) => glide(monitor.gain, v),
+    setBackingVolume: (v) => glide(backingGain.gain, v),
+    playBacking,
+    stopBacking,
+    backingTime,
     startRecording,
     stopRecording,
     /** Seconds recorded so far in the current take (0 when not recording). */
@@ -170,6 +230,8 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
     /** Stops everything. Call stopRecording() first to keep a running take. */
     async stop() {
       ctx.onstatechange = null;
+      stopBacking();
+      backingGain.disconnect();
       node.port.onmessage = null;
       recorder.port.onmessage = null;
       source.disconnect();
