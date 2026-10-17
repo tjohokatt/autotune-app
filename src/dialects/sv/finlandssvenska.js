@@ -20,5 +20,7 @@ export default {
   },
   rules: [],
   endings: [', nå', ', vet du', ', int sant'],
+  // Flat melody, measured pace.
+  voice: { melody: [0, 0, 0, 0, -1], flatten: 0.3, shift: 0, tempo: 0.9 },
   speech: { rate: 0.85, pitch: 0.95, voiceLangs: ['sv-FI', 'sv-SE'] },
 };

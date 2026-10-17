@@ -31,5 +31,7 @@ export default {
   },
   rules: [{ from: /ig$/, to: 'i' }],
   endings: [', lixom', ', å så', ', va'],
+  // Lively, ending on a rise.
+  voice: { melody: [0, 1, 0, 2, 5], flatten: 1.3, shift: 1, tempo: 1.08 },
   speech: { rate: 1.05, pitch: 1.1, voiceLangs: ['sv-SE'] },
 };

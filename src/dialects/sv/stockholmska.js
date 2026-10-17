@@ -34,5 +34,7 @@ export default {
   },
   rules: [{ from: /ig$/, to: 'i' }],
   endings: [', typ', ', asså', ', liksom', ', eller'],
+  // Quick, falling towards the end.
+  voice: { melody: [0, 2, 1, -1, -3], flatten: 1.1, shift: 0, tempo: 1.1 },
   speech: { rate: 1.1, pitch: 1.05, voiceLangs: ['sv-SE'] },
 };

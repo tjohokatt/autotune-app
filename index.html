@@ -33,14 +33,34 @@
         <a class="back-link" href="#/" aria-label="Tillbaka till start">←</a>
         <h1>🗣️ Dialekter</h1>
       </header>
-      <label class="field-label" for="dialect-input">Skriv en mening</label>
-      <textarea id="dialect-input" class="text-input" rows="3" maxlength="300" placeholder="T.ex. Hej! Jag vill ha mycket glass nu."></textarea>
-      <button id="dialect-example" class="toggle-button" type="button">🎲 Ge mig ett exempel</button>
-
       <section class="styles" aria-labelledby="dialects-heading">
         <h2 id="dialects-heading">Välj dialekt</h2>
         <div id="dialects" class="preset-grid"></div>
       </section>
+
+      <section class="voice-panel" aria-labelledby="voice-heading">
+        <h2 id="voice-heading">🎤 Säg något</h2>
+        <button id="voice-record" class="record-button" type="button" aria-pressed="false">⏺ Spela in (max 10 s)</button>
+        <div id="voice-timer" class="record-timer" role="timer" hidden>0:00 / 0:10</div>
+        <div id="voice-actions" class="voice-actions" hidden>
+          <button id="voice-melody" class="big-button" type="button">🎤 Din röst på dialekt</button>
+          <button id="voice-computer" class="big-button play-button" type="button">🤖 Datorn säger det</button>
+          <p id="voice-progress" class="song-status"></p>
+        </div>
+        <div id="voice-result" class="take" hidden>
+          <div class="take-header">
+            <strong id="voice-result-title">🎵 Din röst</strong>
+          </div>
+          <audio id="voice-audio" controls preload="auto"></audio>
+          <div class="take-actions">
+            <a id="voice-download" class="take-button" href="#" download>⬇️ Ladda ner</a>
+          </div>
+        </div>
+      </section>
+
+      <label class="field-label" for="dialect-input">✏️ … eller skriv en mening</label>
+      <textarea id="dialect-input" class="text-input" rows="3" maxlength="300" placeholder="T.ex. Hej! Jag vill ha mycket glass nu."></textarea>
+      <button id="dialect-example" class="toggle-button" type="button">🎲 Ge mig ett exempel</button>
 
       <section class="dialect-result" aria-live="polite">
         <p id="dialect-output" class="dialect-output empty"></p>

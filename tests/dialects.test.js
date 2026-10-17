@@ -87,3 +87,13 @@ describe('pickVoice', () => {
     expect(pickVoice([{ lang: 'en-US' }], ['sv-SE'])).toBeNull();
   });
 });
+
+describe('dialect voice settings', () => {
+  it('every dialect has voice settings in a sensible range', () => {
+    for (const d of DIALECTS) {
+      expect(d.voice.melody.length).toBeGreaterThan(0);
+      expect(d.voice.tempo).toBeGreaterThan(0.5);
+      expect(d.voice.tempo).toBeLessThan(1.5);
+    }
+  });
+});
