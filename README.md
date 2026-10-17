@@ -4,11 +4,16 @@ A browser-based autotune app for singing at home. Sing into the mic and hear you
 
 **Live site:** coming in phase 4 (GitHub Pages: `https://tjohokatt.github.io/autotune-app/`).
 
+The start page lets you choose between **🎤 Autotune** and **🗣️ Dialektförvrängare** (dialect changer, coming soon).
+
 ## Status
 - ✅ Phase 1: Tuner. Live pitch detection (YIN in an AudioWorklet) shows the current note and how many cents off it is.
 - ✅ Phase 2: Autotune. TD-PSOLA pitch shifting, five styles, live monitoring and settings (key, scale, retune speed, mix, volume).
 - ✅ Phase 3: Recording. Record the autotuned voice (up to 5 min), play it back and download it as WAV.
 - ⏳ Phase 4: Deploy to GitHub Pages
+- ✅ Phase 5: Start page with mode picker (Autotune / Dialektförvrängare)
+- ⏳ Phase 6: Dialect changer (Swedish dialects first, English later)
+- ⏳ Phase 7: Karaoke lyrics and backing track in autotune
 
 ## Running locally
 Requires Node.js 20+.

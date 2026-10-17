@@ -8,8 +8,41 @@
     <title>Autotune</title>
   </head>
   <body>
-    <main class="app">
+    <main class="app home" data-view="home">
       <header>
+        <h1>🎉 Röstlabbet</h1>
+        <p class="subtitle">Vad vill du göra med rösten?</p>
+      </header>
+
+      <nav class="mode-grid" aria-label="Välj läge">
+        <a class="mode-card" href="#/autotune">
+          <span class="mode-emoji" aria-hidden="true">🎤</span>
+          <span class="mode-name">Autotune</span>
+          <span class="mode-desc">Sjung och låt som en popstjärna eller robot</span>
+        </a>
+        <a class="mode-card" href="#/dialekt">
+          <span class="mode-emoji" aria-hidden="true">🗣️</span>
+          <span class="mode-name">Dialektförvrängare</span>
+          <span class="mode-desc">Prata skånska, göteborgska och mer</span>
+        </a>
+      </nav>
+    </main>
+
+    <main class="app" data-view="dialekt" hidden>
+      <header class="view-header">
+        <a class="back-link" href="#/" aria-label="Tillbaka till start">←</a>
+        <h1>🗣️ Dialekter</h1>
+      </header>
+      <section class="panel coming-soon">
+        <p class="coming-emoji" aria-hidden="true">🚧</p>
+        <p><strong>Kommer snart!</strong></p>
+        <p>Här ska du kunna skriva en mening och höra den på skånska, göteborgska, norrländska och fler dialekter.</p>
+      </section>
+    </main>
+
+    <main class="app" data-view="autotune" hidden>
+      <header class="view-header">
+        <a class="back-link" href="#/" aria-label="Tillbaka till start">←</a>
         <h1>🎤 Autotune</h1>
       </header>
 
