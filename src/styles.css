@@ -476,15 +476,43 @@ h1 {
   outline: 4px solid var(--text);
   outline-offset: 2px;
 }
-.coming-soon {
+.field-label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: -8px;
+}
+.text-input {
+  width: 100%;
+  min-height: 96px;
+  padding: 14px 16px;
+  border: 3px solid var(--panel);
+  border-radius: 20px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.2rem;
+  resize: vertical;
+}
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.dialect-result {
   background: var(--panel);
   border-radius: 24px;
-  padding: 24px 16px;
+  padding: 20px 16px;
   text-align: center;
-  font-size: 1.1rem;
-  line-height: 1.4;
 }
-.coming-emoji {
+.dialect-output {
   margin: 0;
-  font-size: 3rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--accent-2);
+  overflow-wrap: anywhere;
+}
+.dialect-output.empty {
+  color: var(--muted);
+  font-size: 1.15rem;
+  font-weight: 500;
 }

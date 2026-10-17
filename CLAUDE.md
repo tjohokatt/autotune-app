@@ -9,9 +9,9 @@ The start page (`#/`) lets you pick a mode. Each mode is its own view (`<main da
 | Route | Mode | Status |
 |---|---|---|
 | `#/autotune` | Autotune (+ karaoke later) | ✅ |
-| `#/dialekt` | Dialektförvrängare (dialect changer) | placeholder |
+| `#/dialekt` | Dialektförvrängare (dialect changer) | ✅ text + read-aloud |
 
-Dialects are planned as plain objects (like presets) under `src/dialects/<lang>/`, starting with Swedish dialects and with English dialects added later. Karaoke lyrics/backing tracks are loaded by the user from local files (LRC + audio); never bundle copyrighted lyrics or music.
+Dialects are plain objects (like presets) under `src/dialects/<lang>/`, listed in `src/dialects/index.js`; the format is documented at the top of `src/dialects/engine.js`. Swedish first; English dialects go in `src/dialects/en/` with `lang: 'en'`. Read-aloud uses the device's `speechSynthesis` voices. Don't use the Web Speech *recognition* API: it sends audio to a server. Karaoke lyrics/backing tracks are loaded by the user from local files (LRC + audio); never bundle copyrighted lyrics or music.
 
 ## Core requirements
 - Sing into the mic (desktop USB mic **or** phone mic) and hear yourself autotuned in near real time.
@@ -76,7 +76,8 @@ src/
   main.js            entry: router, switches views
   router.js          hash router (#/, #/autotune, #/dialekt)
   modes/autotune/    autotune view wiring
-  modes/dialect/     dialect changer (planned)
+  modes/dialect/     dialect changer view wiring
+  dialects/          dialect definitions, text rewrite engine, speech (pure, tested)
   audio/engine.js    AudioContext, mic, node graph
   audio/autotune-worklet.js
   dsp/               pitch detection, scales, pitch shifting (pure, tested)

@@ -33,11 +33,21 @@
         <a class="back-link" href="#/" aria-label="Tillbaka till start">←</a>
         <h1>🗣️ Dialekter</h1>
       </header>
-      <section class="panel coming-soon">
-        <p class="coming-emoji" aria-hidden="true">🚧</p>
-        <p><strong>Kommer snart!</strong></p>
-        <p>Här ska du kunna skriva en mening och höra den på skånska, göteborgska, norrländska och fler dialekter.</p>
+      <label class="field-label" for="dialect-input">Skriv en mening</label>
+      <textarea id="dialect-input" class="text-input" rows="3" maxlength="300" placeholder="T.ex. Hej! Jag vill ha mycket glass nu."></textarea>
+      <button id="dialect-example" class="toggle-button" type="button">🎲 Ge mig ett exempel</button>
+
+      <section class="styles" aria-labelledby="dialects-heading">
+        <h2 id="dialects-heading">Välj dialekt</h2>
+        <div id="dialects" class="preset-grid"></div>
       </section>
+
+      <section class="dialect-result" aria-live="polite">
+        <p id="dialect-output" class="dialect-output empty"></p>
+      </section>
+
+      <p id="dialect-message" class="message" role="alert" hidden></p>
+      <button id="dialect-speak" class="big-button" type="button">🔊 Läs upp</button>
     </main>
 
     <main class="app" data-view="autotune" hidden>
