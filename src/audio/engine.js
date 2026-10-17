@@ -15,6 +15,7 @@
 import workletUrl from './autotune-worklet.js?worker&url';
 import recorderUrl from './recorder-worklet.js?worker&url';
 import { encodeWav } from './wav.js';
+import { normalizeGain, applyGain } from './normalize.js';
 
 export const BUFFER_SIZE = 2048;
 export const HOP_SIZE = 512;
@@ -170,6 +171,7 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
     } else if (e.data.type === 'done') {
       const { chunks, samples, resolve } = take;
       take = null;
+      applyGain(chunks, normalizeGain(chunks));
       const wav = encodeWav(chunks, ctx.sampleRate);
       resolve({ blob: new Blob([wav], { type: 'audio/wav' }), duration: samples / ctx.sampleRate });
     }
