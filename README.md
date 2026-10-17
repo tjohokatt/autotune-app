@@ -57,7 +57,7 @@ getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") ─┬→ Ga
                                      ├─ TD-PSOLA pitch shift (+ optional formant shift)
                                      └─ crossfade to dry when no clear pitch (breaths, consonants)
 ```
-Recordings capture the autotuned signal before the monitor volume, so a take sounds the same whether live monitoring is on or off. They are encoded as 16-bit mono WAV (`src/audio/wav.js`), the same format in every browser. That's about 5–6 MB per minute.
+Recordings capture the autotuned signal before the monitor volume, so a take sounds the same whether live monitoring is on or off. Each finished take is peak-normalized (up to +26 dB, `src/audio/normalize.js`), because phone mics are quiet with auto gain control off. Takes are encoded as 16-bit mono WAV (`src/audio/wav.js`), the same format in every browser. That's about 5–6 MB per minute.
 
 Styles are plain objects in `src/presets.js`; adding a style means adding an object.
 
