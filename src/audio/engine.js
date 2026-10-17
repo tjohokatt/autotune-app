@@ -1,9 +1,9 @@
 // Audio engine: AudioContext, microphone and the worklet graph.
 //
 //   getUserMedia → MediaStreamSource → AudioWorkletNode("autotune") ─┬→ GainNode (monitor) → destination
-//                                                                   └→ AudioWorkletNode("recorder")
-//   karaoke backing track → GainNode (backing) ─┬→ destination
-//                                               └→ AudioWorkletNode("recorder")
+//                                                                   └→ merger ch 0 ─┐
+//   karaoke backing track → GainNode (backing) ─┬→ destination                     ├→ AudioWorkletNode("recorder")
+//                                               └→ merger ch 1 (mono) ─────────────┘
 //
 // The monitor gain starts wherever the UI says (0 = off until the user turns
 // on live monitoring with headphones). The worklet stays connected either way
@@ -15,7 +15,7 @@
 import workletUrl from './autotune-worklet.js?worker&url';
 import recorderUrl from './recorder-worklet.js?worker&url';
 import { encodeWav } from './wav.js';
-import { normalizeGain, applyGain } from './normalize.js';
+import { mixTake } from './normalize.js';
 
 export const BUFFER_SIZE = 2048;
 export const HOP_SIZE = 512;
@@ -106,22 +106,25 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
 
   // Recording: the recorder worklet streams batches of samples while a take
   // is running; they are collected here and turned into a WAV at the end.
-  // Mono input: a stereo backing track is downmixed before it is summed with the voice.
+  // Voice and backing go in on separate channels (the merger downmixes each
+  // input to mono) and are mixed at the end by mixTake().
   const recorder = new AudioWorkletNode(ctx, 'recorder', {
     numberOfInputs: 1,
     numberOfOutputs: 0,
-    channelCount: 1,
+    channelCount: 2,
     channelCountMode: 'explicit',
-    channelInterpretation: 'speakers',
+    channelInterpretation: 'discrete',
   });
-  node.connect(recorder);
+  const merger = ctx.createChannelMerger(2);
+  merger.connect(recorder);
+  node.connect(merger, 0, 0);
 
   // Karaoke backing track: always audible (independent of the monitor
   // switch) and mixed into recordings.
   const backingGain = ctx.createGain();
   backingGain.gain.value = settings.backingVolume ?? 0.8;
   backingGain.connect(ctx.destination);
-  backingGain.connect(recorder);
+  backingGain.connect(merger, 0, 1);
   const decoded = new WeakMap(); // Blob → AudioBuffer
   let backing = null; // { source, startedAt }
 
@@ -162,16 +165,18 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
     if (!backing) return null;
     return ctx.currentTime - backing.startedAt - (ctx.outputLatency || ctx.baseLatency || 0);
   }
-  let take = null; // { chunks, samples, stopped: Promise | null, resolve }
+  let take = null; // { voice, backing, samples, stopped: Promise | null, resolve }
   recorder.port.onmessage = (e) => {
     if (!take) return;
     if (e.data.type === 'chunk') {
-      take.chunks.push(e.data.samples);
-      take.samples += e.data.samples.length;
+      const [voice, backing] = e.data.channels;
+      take.voice.push(voice);
+      take.backing.push(backing);
+      take.samples += voice.length;
     } else if (e.data.type === 'done') {
-      const { chunks, samples, resolve } = take;
+      const { voice, backing, samples, resolve } = take;
       take = null;
-      applyGain(chunks, normalizeGain(chunks));
+      const chunks = mixTake(voice, backing);
       const wav = encodeWav(chunks, ctx.sampleRate);
       resolve({ blob: new Blob([wav], { type: 'audio/wav' }), duration: samples / ctx.sampleRate });
     }
@@ -179,7 +184,7 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
 
   function startRecording() {
     if (take) return;
-    take = { chunks: [], samples: 0, stopped: null, resolve: null };
+    take = { voice: [], backing: [], samples: 0, stopped: null, resolve: null };
     recorder.port.postMessage({ type: 'start' });
   }
 
@@ -234,6 +239,7 @@ export async function startEngine({ onPitch, onStateChange, settings }) {
       ctx.onstatechange = null;
       stopBacking();
       backingGain.disconnect();
+      merger.disconnect();
       node.port.onmessage = null;
       recorder.port.onmessage = null;
       source.disconnect();
