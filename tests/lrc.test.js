@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { parseLrc, lineIndexAt, wordsSungAt, toLrc, formatTimeTag, hasTimeTags, parseKey } from '../src/karaoke/lrc.js';
+import {
+  parseLrc,
+  lineIndexAt,
+  wordFills,
+  tapsToTimes,
+  offsetOf,
+  withOffset,
+  REACTION_S,
+  toLrc, formatTimeTag, hasTimeTags, parseKey } from '../src/karaoke/lrc.js';
 
 const SONG = `[ti:Min låt]
 [ar:Någon]
@@ -55,13 +63,46 @@ describe('lineIndexAt', () => {
   });
 });
 
-describe('wordsSungAt', () => {
-  it('counts started words', () => {
-    const { lines } = parseLrc('[00:01.00]<00:01.00>Ett <00:01.50>två');
-    expect(wordsSungAt(lines[0], 0.5)).toBe(0);
-    expect(wordsSungAt(lines[0], 1.2)).toBe(1);
-    expect(wordsSungAt(lines[0], 9)).toBe(2);
-    expect(wordsSungAt({ time: 0, text: 'x', words: null }, 9)).toBe(0);
+describe('wordFills', () => {
+  const fills = (lines, i, t) => wordFills(lines, i, t).map((w) => Math.round(w.fill * 100) / 100);
+
+  it('fills per-word lines word by word', () => {
+    const { lines } = parseLrc('[00:01.00]<00:01.00>Hej <00:02.00>då\n[00:04.00]Nästa');
+    expect(fills(lines, 0, 0.5)).toEqual([0, 0]);
+    expect(fills(lines, 0, 1.5)).toEqual([0.5, 0]);
+    expect(fills(lines, 0, 2.5)).toEqual([1, 0.5]);
+    expect(wordFills(lines, 0, 1).map((w) => w.text)).toEqual(['Hej ', 'då']);
+  });
+
+  it('fills plain lines character by character up to the estimated end', () => {
+    // Two words: estimated 1 s long (minimum), next line far away.
+    const { lines } = parseLrc('[00:10.00]ab cd\n[00:30.00]x');
+    expect(fills(lines, 0, 9)).toEqual([0, 0]);
+    expect(fills(lines, 0, 10.25)).toEqual([0.5, 0]);
+    expect(fills(lines, 0, 10.75)).toEqual([1, 0.5]);
+    expect(fills(lines, 0, 20)).toEqual([1, 1]);
+    expect(wordFills(lines, 0, 10).map((w) => w.text)).toEqual(['ab ', 'cd']);
+  });
+
+  it('finishes a plain line before the next one starts', () => {
+    const { lines } = parseLrc('[00:10.00]a b c d e f g h\n[00:11.10]x');
+    expect(fills(lines, 0, 11)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+  });
+});
+
+describe('timing helpers', () => {
+  it('moves taps earlier by the reaction time, not below 0', () => {
+    expect(tapsToTimes([0.1, 5])).toEqual([0, 5 - REACTION_S]);
+  });
+
+  it('reads, sets and removes the [offset:] tag', () => {
+    const lrc = '[ti:Låt]\n[00:01.00]Hej\n';
+    expect(offsetOf(lrc)).toBe(0);
+    const earlier = withOffset(lrc, 400);
+    expect(offsetOf(earlier)).toBe(400);
+    expect(parseLrc(earlier).lines[0].time).toBeCloseTo(0.6);
+    expect(offsetOf(withOffset(earlier, -200))).toBe(-200);
+    expect(withOffset(earlier, 0)).toBe(lrc);
   });
 });
 
