@@ -96,6 +96,7 @@
           <input id="backing-volume" type="range" min="0" max="100" step="5" value="80" />
           <button id="song-sync" class="small-button" type="button">⏱️ Tidsätt texten</button>
           <button id="song-delete" class="small-button secondary" type="button">🗑️ Ta bort</button>
+          <button id="song-upload" class="small-button secondary" type="button" hidden>💻 Spara på datorn</button>
         </div>
 
         <form id="song-form" class="song-form" hidden>
@@ -109,7 +110,7 @@
           <textarea id="song-lyrics" class="text-input" rows="6" placeholder="En rad per rad i låten. Har texten inga tider tidsätter du den sedan."></textarea>
           <label for="song-key">Tonart (valfritt, t.ex. Am)</label>
           <input id="song-key" type="text" maxlength="10" />
-          <p class="tip">Filerna sparas bara i den här webbläsaren och laddas aldrig upp.</p>
+          <p class="tip">Låten sparas i låtmappen på datorn som kör appen, eller i den här webbläsaren om det inte finns någon. Den laddas aldrig upp på internet.</p>
           <div class="take-actions">
             <button class="take-button" type="submit">💾 Spara</button>
             <button id="song-cancel" class="take-button secondary" type="button">Avbryt</button>
