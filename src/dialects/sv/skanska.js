@@ -1,3 +1,7 @@
+// Long vowels in one-syllable words become glides ("hus" → "heus"); the
+// consonant list leaves out m/n, which usually follow short vowels ("som").
+const ONE_SYLLABLE = (v) => new RegExp(`^([^aeiouyåäö]*)${v}([bdfgjklprstv]?)$`);
+
 export default {
   id: 'skanska',
   lang: 'sv',
@@ -10,32 +14,53 @@ export default {
     nu: 'neu',
     mig: 'mäj',
     dig: 'däj',
+    sig: 'säj',
     och: 'å',
     du: 'deu',
     de: 'di',
     dem: 'di',
+    det: 'de',
+    är: 'e',
+    vad: 'va',
+    med: 'mä',
     mycket: 'möcke',
+    inte: 'inte',
     tjej: 'tös',
     tjejer: 'töser',
     flicka: 'tös',
-    kille: 'pôg',
-    pojke: 'pôg',
-    killar: 'pôgar',
+    flickor: 'töser',
+    kille: 'påg',
+    pojke: 'påg',
+    killar: 'pågar',
+    pojkar: 'pågar',
     barn: 'glytt',
     barnen: 'glyttarna',
     ful: 'rälig',
+    äcklig: 'rälig',
+    äckligt: 'räligt',
     titta: 'glo',
     tittar: 'glor',
+    tittade: 'glodde',
+    potatis: 'pantofler',
+    potatisar: 'pantofler',
     hus: 'heus',
     ut: 'eut',
-    bra: 'braaa',
-    jättebra: 'helt bäst',
+    bra: 'bra',
+    jättebra: 'hemskt bra',
+    jättekul: 'hemskt kul',
     skåne: 'Skåneland',
     hej: 'hallå hallå',
+    hejdå: 'hej me däj',
   },
-  rules: [],
-  endings: [', ju', ', hörru'],
-  // Rise-fall melody, a bit slower and lower.
-  voice: { melody: [0, 2, 3, 0, -3], flatten: 1.3, shift: -1, tempo: 0.92 },
-  speech: { rate: 0.95, pitch: 0.95, voiceLangs: ['sv-SE'] },
+  rules: [
+    { from: ONE_SYLLABLE('u'), to: '$1eu$2' }, // sur → seur, kul → keul
+    { from: ONE_SYLLABLE('o'), to: '$1ou$2' }, // sol → soul, stor → stour
+    { from: ONE_SYLLABLE('e'), to: '$1ei$2' }, // se → sei, vet → veit
+    { from: /^jätte(?=.)/, to: 'hemskt ' },
+  ],
+  endings: [', ju', ', hörru', ', vettu'],
+  // Rise-fall melody, every syllable glides up and down ("diphthongs"),
+  // a bit slower and lower.
+  voice: { melody: [0, 1, 2, 0, -3], syllable: [0, 2, -1], beat: [1, -1], flatten: 1.2, shift: -1, tempo: 0.92 },
+  speech: { rate: 0.92, pitch: 0.9, voiceLangs: ['sv-SE'] },
 };
