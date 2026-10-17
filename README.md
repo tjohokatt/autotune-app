@@ -22,7 +22,7 @@ In autotune, **🎶 Karaoke → ➕ Ny låt** adds a song from your own files:
 - **Lyrics:** an `.lrc` file with times (`[00:12.40]A line`), or plain text with one line per sung line. Plain text opens the **⏱️ Tidsätt texten** editor: play the song and tap **Nu!** as each line starts.
 - **Tonart (optional):** e.g. `Am`. It's stored as a `[key:Am]` tag and sets the autotune key and scale when the song is selected.
 
-Songs are stored in the browser (IndexedDB) and never uploaded. No lyrics or music are included in the app, since songs are copyrighted.
+**Låtmapp (song folder):** while `npm run dev` (or `npm run preview`) runs, new songs are saved to `songs/` in the repo on that computer, so every phone on the same Wi-Fi sees them. A song there is two files with the same name, e.g. `min-lat.lrc` and `min-lat.mp3`; you can also copy files in by hand. The folder is git-ignored. Songs added before the folder existed, or on the published site, are kept in that browser only (IndexedDB); **💻 Spara på datorn** copies one into the folder. Nothing is uploaded to the internet. No lyrics or music are included in the app, since songs are copyrighted.
 
 Tap **Starta**, then **▶ Spela låten**. The lyrics follow the music, and if you record at the same time, the backing track is mixed into the take. Use headphones: through speakers the mic picks up the music.
 

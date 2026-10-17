@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 .DS_Store
+# Karaoke song folder: personal, copyrighted files
+songs/

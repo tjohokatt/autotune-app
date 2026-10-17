@@ -1,9 +1,12 @@
-// Karaoke: pick one of "Mina låtar", play its backing track and show the
-// lyrics in time. Songs are added from the user's own files (audio + LRC or
-// plain text) and kept in this browser. Plain text is timed with a tap-along
-// editor that uses a plain <audio> element, so it works without the mic.
+// Karaoke: pick a song, play its backing track and show the lyrics in time.
+// Songs are added from the user's own files (audio + LRC or plain text). They
+// go to the song folder on the computer running the dev server when there is
+// one (so phones on the LAN see them too), otherwise to this browser.
+// Plain text is timed with a tap-along editor that uses a plain <audio>
+// element, so it works without the mic.
 
 import { listSongs, getSong, saveSong, deleteSong } from '../karaoke/library.js';
+import { listFolderSongs, getFolderSong, saveFolderSong } from '../karaoke/folder.js';
 import { parseLrc, lineIndexAt, wordsSungAt, toLrc, hasTimeTags, parseKey } from '../karaoke/lrc.js';
 
 /** Plain lyric lines from either LRC or plain text (for the timing editor). */
@@ -20,6 +23,21 @@ export function plainLines(text) {
 export function withKeyTag(text, key) {
   const rest = text.replace(/^\[key:.*\]\s*\n?/im, '');
   return key ? `[key:${key}]\n${rest}` : rest;
+}
+
+/** Folder id for a new song: slug of the title, made unique among `taken`. */
+export function folderId(title, taken) {
+  const base =
+    title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 50) || 'lat';
+  let id = base;
+  for (let n = 2; taken.includes(id); n++) id = `${base}-${n}`;
+  return id;
 }
 
 /**
@@ -39,12 +57,14 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   const songTools = $('#song-tools');
   const syncBtn = $('#song-sync');
   const deleteBtn = $('#song-delete');
+  const uploadBtn = $('#song-upload');
   const volumeEl = $('#backing-volume');
   const statusEl = $('#song-status');
   const form = $('#song-form');
   const syncEl = $('#sync');
 
-  let song = null; // the selected song (with audio)
+  let song = null; // the selected song (with audio); song.folder marks folder songs
+  let folderSongs = null; // [{ id, title }] in the computer's song folder, or null if none
   let parsed = null; // parseLrc(song.lrc)
   let playing = false;
   let frame = 0;
@@ -52,16 +72,46 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
 
   // ---------- picker ----------
 
-  async function refreshList(selectId = song?.id) {
-    const songs = await listSongs();
-    selectEl.replaceChildren(new Option('– Ingen låt –', ''));
-    for (const s of songs) selectEl.add(new Option(s.title, String(s.id)));
-    selectEl.value = selectId != null ? String(selectId) : '';
+  // Picker values: "folder:<id>" for folder songs, "db:<id>" for this browser's.
+  const valueOf = (s) => (s ? (s.folder ? `folder:${s.id}` : `db:${s.id}`) : '');
+
+  function group(label, songs, prefix) {
+    const g = document.createElement('optgroup');
+    g.label = label;
+    for (const s of songs) g.append(new Option(s.title, `${prefix}:${s.id}`));
+    return g;
   }
 
-  async function select(id) {
+  async function refreshList(selectValue = valueOf(song)) {
+    const [local, folder] = await Promise.all([listSongs().catch(() => []), listFolderSongs()]);
+    folderSongs = folder;
+    selectEl.replaceChildren(new Option('– Ingen låt –', ''));
+    if (folder?.length) selectEl.append(group('💻 På datorn', folder, 'folder'));
+    if (local.length) selectEl.append(group('📱 Bara i den här webbläsaren', local, 'db'));
+    selectEl.value = selectValue;
+    if (selectEl.value !== selectValue) selectEl.value = '';
+  }
+
+  async function loadSong(value) {
+    const [kind, id] = value.split(/:(.*)/s);
+    if (kind === 'folder') {
+      const title = folderSongs?.find((s) => s.id === id)?.title ?? id;
+      return getFolderSong(id, title);
+    }
+    if (kind === 'db') return getSong(Number(id));
+    return null;
+  }
+
+  async function select(value) {
     stopSong();
-    song = id ? await getSong(Number(id)) : null;
+    showMessage(null);
+    try {
+      song = value ? await loadSong(value) : null;
+    } catch (err) {
+      console.error(err);
+      song = null;
+      showMessage('Låten gick inte att hämta från datorn. Är utvecklingsservern igång?');
+    }
     parsed = song ? parseLrc(song.lrc) : null;
     if (song) {
       const key = parseKey(parsed.meta.key);
@@ -73,6 +123,9 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   function render() {
     const timed = parsed?.lines.length > 0;
     songTools.hidden = !song;
+    // Folder songs are removed by deleting the files on the computer.
+    deleteBtn.hidden = !song || song.folder;
+    uploadBtn.hidden = !song || song.folder || folderSongs === null;
     lyricsEl.hidden = !song;
     playBtn.hidden = !song;
     playBtn.disabled = !engineOn || !timed;
@@ -148,10 +201,32 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   volumeEl.addEventListener('input', () => getEngine()?.setBackingVolume(Number(volumeEl.value) / 100));
 
   deleteBtn.addEventListener('click', async () => {
-    if (!song || !confirm(`Ta bort "${song.title}"?`)) return;
+    if (!song || song.folder || !confirm(`Ta bort "${song.title}"?`)) return;
     await deleteSong(song.id);
-    await refreshList(null);
-    await select(null);
+    await refreshList('');
+    await select('');
+  });
+
+  /** Save a song to the computer's song folder; resolves to its picker value. */
+  async function saveToFolder({ title, lrc, audio, audioName }) {
+    const id = folderId(title, (folderSongs ?? []).map((s) => s.id));
+    // The folder takes the title from the LRC's [ti:] tag.
+    const withTitle = /^\s*\[ti:/im.test(lrc) ? lrc : `[ti:${title}]\n${lrc}`;
+    await saveFolderSong(id, { lrc: withTitle, audio, audioName });
+    return `folder:${id}`;
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!song || song.folder) return;
+    showMessage(null);
+    try {
+      const value = await saveToFolder(song);
+      await refreshList(value);
+      await select(value);
+    } catch (err) {
+      console.error(err);
+      showMessage('Det gick inte att spara låten på datorn.');
+    }
   });
 
   // ---------- add a song ----------
@@ -188,10 +263,19 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
     const lrc = keyText ? withKeyTag(lyrics, keyText) : lyrics;
     // Store the file as a plain Blob; some browsers can't keep File objects in IndexedDB.
     const blob = new Blob([await audio.arrayBuffer()], { type: audio.type });
-    const id = await saveSong({ title, lrc, audio: blob, audioName: audio.name });
+    const newSong = { title, lrc, audio: blob, audioName: audio.name };
+    let value;
+    try {
+      // Prefer the computer's song folder so phones see the song too.
+      value = folderSongs !== null ? await saveToFolder(newSong) : `db:${await saveSong(newSong)}`;
+    } catch (err) {
+      console.error(err);
+      showMessage('Det gick inte att spara låten.');
+      return;
+    }
     form.hidden = true;
-    await refreshList(id);
-    await select(id);
+    await refreshList(value);
+    await select(value);
     if (!hasTimeTags(lyrics)) startSync();
   });
 
@@ -234,8 +318,14 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
       const lines = syncTimes.map((time, k) => ({ time, text: syncLines[k] }));
       const key = parsed?.meta.key;
       song.lrc = toLrc(lines, { ti: song.title, ...(key ? { key } : {}) });
-      await saveSong(song);
-      await select(song.id);
+      try {
+        if (song.folder) await saveFolderSong(song.id, { lrc: song.lrc });
+        else await saveSong(song);
+      } catch (err) {
+        console.error(err);
+        showMessage('Det gick inte att spara tiderna.');
+      }
+      await select(valueOf(song));
     }
   }
 
@@ -258,10 +348,7 @@ export function createKaraokeUI(root, { getEngine, onKey, showMessage }) {
   syncAudio.addEventListener('ended', () => finishSync(true));
   syncBtn.addEventListener('click', startSync);
 
-  refreshList().catch((err) => {
-    console.error(err);
-    root.hidden = true; // e.g. IndexedDB blocked in private mode
-  });
+  refreshList();
   render();
 
   return {
